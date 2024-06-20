@@ -2,7 +2,7 @@
 title: 入门指南
 description: 跟随我们的指引来熟悉 Minotaur
 published: true
-date: 2024-06-20T09:18:59.528Z
+date: 2024-06-20T12:14:38.835Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T09:41:53.264Z

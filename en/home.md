@@ -2,7 +2,7 @@
 title: Docs
 description: From here, master the Minotaur.
 published: true
-date: 2024-06-20T09:27:18.503Z
+date: 2024-06-20T12:14:54.180Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-20T09:27:13.146Z
