@@ -34,4 +34,4 @@ Minotaur provides a comprehensive set of tools to address common issues in distr
 # Getting Started
 If you are using Minotaur for the first time, we recommend following our suggested sequence. The examples will guide you through understanding the Actor system, Actors, messages, and the built-in functions for quickly setting up servers, enabling you to quickly get started and understand its structure.
 
-👉 [Check out our guide](/guide)
+👉 [Check out our guide](/zh/guide)

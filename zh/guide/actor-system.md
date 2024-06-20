@@ -20,7 +20,7 @@ Minotaur 的 `ActorSystem` 是其核心组件，通过 Actor 模型提供简便�
 
 我们可以通过这张图片看出来 `ActorSystem` 的整个层级关系是一个树状图。
 
-![actor-system-tree.png](/actor-system/actor-system-tree.png)
+![actor-system-tree.png](/zh/actor-systemtem/actor-system-tree.png)
 
 > 关于 `UserGuardActor` 主要被用作监管用途，在发生任何越过监管的情况时，将会由它来进行最终的执行。目前在除了 `Actor` 被销毁的情况下，均会对 `Actor` 进行重启。
 
@@ -55,7 +55,7 @@ func ExampleNewActorSystem() {
 
 是不是很简单，是的！
 
-在 `vivid.NewActorSystem` 函数中，它还接受一些可选项，可用于我们自定义 `ActorSystem` 的一些行为，例如设置日志记录器、设置名称等。具体可查阅：[ActorSystem 可选项](/guide/actor-system/actor-system-options)
+在 `vivid.NewActorSystem` 函数中，它还接受一些可选项，可用于我们自定义 `ActorSystem` 的一些行为，例如设置日志记录器、设置名称等。具体可查阅：[ActorSystem 可选项](/zh/guide/actor-system/actor-system-options)
 
 # Actor
 `Actor` 是基本的并发单元，独立处理其内部状态，并通过消息传递进行通信。正常情况每个 Actor 都会拥有一个自己的邮箱，用于接收和存储消息。
