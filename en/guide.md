@@ -2,7 +2,7 @@
 title: Getting Started Guide
 description: Follow our guide to get familiar with Minotaur
 published: true
-date: 2024-06-20T16:05:49.372Z
+date: 2024-06-20T16:12:45.071Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-20T15:53:51.269Z
