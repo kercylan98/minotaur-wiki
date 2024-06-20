@@ -2,7 +2,7 @@
 title: Docs
 description: From here, master the Minotaur.
 published: true
-date: 2024-06-20T12:14:54.180Z
+date: 2024-06-20T15:37:54.245Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-20T09:27:13.146Z
@@ -11,6 +11,13 @@ dateCreated: 2024-06-20T09:27:13.146Z
 # Introduction
 
 Welcome to Minotaur! This is a distributed service development support library designed in Go language, providing simple yet powerful concurrency and distributed solutions through an Actor model specifically designed for Go. While Minotaur is primarily aimed at game development, many of its features are also suitable for web development.
+
+- [<span class="mdi mdi-github" style="color:black;font-size:18px"></span> Github *https://github.com/kercylan98/minotaur*](https://github.com/kercylan98/minotaur)
+- [<span class="mdi mdi-qqchat" style="color:black;font-size:18px"></span> QQ Group *758219443*](https://qm.qq.com/cgi-bin/qm/qr?k=WzRWJIDLzuJbH6-VjdFiTCd1_qA_Ug-D&jump_from=webapi&authKey=ktLEw3XyY9yO+i9rPbI6Fk0UA0uEhACcUidOFdblaiToZtbHcXyU7sFb31FEc9JJ&noverify=0)
+- [<span class="mdi mdi-gmail" style="color:black;font-size:18px"></span> Email *kercylan@gmail.com*](mailto:kercylan@gmail.com)
+{.links-list}
+
+***
 
 > The project is under active development. Use with caution!
 {.is-warning}
@@ -34,4 +41,5 @@ Minotaur provides a comprehensive set of tools to address common issues in distr
 # Getting Started
 If you are using Minotaur for the first time, we recommend following our suggested sequence. The examples will guide you through understanding the Actor system, Actors, messages, and the built-in functions for quickly setting up servers, enabling you to quickly get started and understand its structure.
 
-👉 [Check out our guide](/zh/guide)
+- [👉 Check out our guide](/guide)
+{.links-list}
