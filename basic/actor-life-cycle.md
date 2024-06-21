@@ -2,7 +2,7 @@
 title: Actor 生命周期
 description: 了解 Actor 的各阶段生命周期及监听方式
 published: true
-date: 2024-06-20T15:05:24.262Z
+date: 2024-06-21T03:53:36.579Z
 tags: actor, life-cycle
 editor: markdown
 dateCreated: 2024-06-20T10:11:37.769Z
