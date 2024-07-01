@@ -1,8 +1,8 @@
 ---
-title: Actor 系统
+title: 快速开始
 description: 搭建 Minotaur 的根基
 published: true
-date: 2024-07-01T06:34:27.719Z
+date: 2024-07-01T07:22:47.668Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T10:29:43.149Z
@@ -21,7 +21,7 @@ Minotaur 的 `ActorSystem` 是其核心组件，通过 Actor 模型提供简便�
 ![actor-system-tree.png](/actor-system-tree.png)
 
 # ActorSystem 
-`ActorSystem` 系统在 Minotaur 中扮演了维护所有 `Actor` 的角色，是一个重量级的数据结构，它无需启动，在创建完成时便会开始运行。
+`ActorSystem` 系统在 Minotaur 中扮演了维护所有 `Actor` 的角色，是一个重量级的数据结构，它在内部维护了一组本地进程地址信息及远程地址的解析，实现了
 
 通常来说，每个应用程序中有且仅应该拥有至多一个 `ActorSystem`，它应该是作为全局的存在，并且在关闭时应确保通过 `ActorSystem.Shutdown` 函数安全的退出。
 
@@ -32,23 +32,44 @@ Minotaur 的 `ActorSystem` 是其核心组件，通过 Actor 模型提供简便�
 通过以下代码即可创建一个 `ActorSystem`：
 
 ```go
-package vivid_test
+package main
 
-import "github.com/kercylan98/minotaur/minotaur/vivid"
+import "github.com/kercylan98/minotaur/core/vivid"
 
-func ExampleNewActorSystem() {
-	vivid.NewActorSystem("example")
-
-	// Output:
-	//
+func main() {
+	vivid.NewActorSystem()
 }
 ```
 
-> 示例代码：[https://github.com/kercylan98/minotaur/blob/develop/minotaur/vivid/actor_system_example_test.go](https://github.com/kercylan98/minotaur/blob/develop/minotaur/vivid/actor_system_example_test.go)
+## 第一个 Actor
+```go
+package main
 
-是不是很简单，是的！
+import (
+	"fmt"
+	"github.com/kercylan98/minotaur/core/vivid"
+)
 
-在 `vivid.NewActorSystem` 函数中，它还接受一些可选项，可用于我们自定义 `ActorSystem` 的一些行为，例如设置日志记录器、设置名称等。具体可查阅：[ActorSystem 可选项](/guide/actor-system/actor-system-options)
+type MyActor struct {
+}
+
+func (m *MyActor) OnReceive(ctx vivid.ActorContext) {
+	switch m := ctx.Message().(type) {
+	case string:
+		fmt.Println(m)
+	}
+}
+
+func main() {
+	system := vivid.NewActorSystem()
+	ref := system.ActorOf(func() vivid.Actor {
+		return &MyActor{}
+	})
+
+	system.Context().Tell(ref, "Hi, minotaur")
+	system.ShutdownGracefully()
+}
+```
 
 # Actor
 `Actor` 是基本的并发单元，独立处理其内部状态，并通过消息传递进行通信。正常情况每个 Actor 都会拥有一个自己的邮箱，用于接收和存储消息。
