@@ -2,14 +2,14 @@
 title: 快速开始
 description: 搭建 Minotaur 的根基
 published: true
-date: 2024-07-01T07:22:47.668Z
+date: 2024-07-03T10:36:48.547Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T10:29:43.149Z
 ---
 
 # 介绍
-Minotaur 的 `ActorSystem` 是其核心组件，通过 Actor 模型提供简便且高效的并发和分布式解决方案。Actor 模型是应对复杂并发问题的一种强大抽象，它避免了传统锁和回调的复杂性。每个 Actor 是一个独立的实体，通过消息传递进行通信，从而实现高并发和高可用性。
+Minotaur 的 `Actor` 实现位于 `vivid` 包中，通过 `Actor` 模型提供简便且高效的并发和分布式解决方案。`Actor` 模型是应对复杂并发问题的一种强大抽象，它避免了传统锁和回调的复杂性。每个 `Actor` 是一个独立的实体，通过消息传递进行通信，从而实现高并发和高可用性。
 
 # 架构
 在 Minotaur 中，每一个 `Actor` 都是一个父级单元，它可以包含多个子级单元，每一个 `Actor` 都有一个唯一的 `ActorId`，用于标识该 `Actor` 的唯一性。
@@ -21,7 +21,9 @@ Minotaur 的 `ActorSystem` 是其核心组件，通过 Actor 模型提供简便�
 ![actor-system-tree.png](/actor-system-tree.png)
 
 # ActorSystem 
-`ActorSystem` 系统在 Minotaur 中扮演了维护所有 `Actor` 的角色，是一个重量级的数据结构，它在内部维护了一组本地进程地址信息及远程地址的解析，实现了
+`ActorSystem` 在 Minotaur 中是维护所有本地及远程 `Actor` 的角色，是一个重量级的数据结构。
+
+
 
 通常来说，每个应用程序中有且仅应该拥有至多一个 `ActorSystem`，它应该是作为全局的存在，并且在关闭时应确保通过 `ActorSystem.Shutdown` 函数安全的退出。
 
