@@ -2,7 +2,7 @@
 title: 先决条件
 description: 开始使用 Minotaur 前的必要条件
 published: true
-date: 2024-07-04T07:57:31.474Z
+date: 2024-07-04T07:58:07.507Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T03:06:28.535Z
@@ -24,4 +24,4 @@ Minotaur 目前需要 [Go](https://go.dev/) 版本 [1.22](https://go.dev/doc/dev
 go get -u github.com/kercylan98/minotaur@develop
 ```
 
-如果您位于国内且无法访问 `Github`，可以尝试通过 [`GOPROXY.IO`](https://goproxy.io/docs/getting-started.html) 代理进行获取。
+如果您位于中国内陆且无法访问 `Github`，可以尝试通过 [`GOPROXY.IO`](https://goproxy.io/docs/getting-started.html) 代理进行获取。
