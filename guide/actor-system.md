@@ -1,8 +1,8 @@
 ---
 title: Actor 模型概述
-description: 搭建 Minotaur 的根基
+description: 一切皆是 Actor，分布式并行计算模型
 published: true
-date: 2024-07-04T08:33:24.964Z
+date: 2024-07-04T08:52:53.420Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T10:29:43.149Z
