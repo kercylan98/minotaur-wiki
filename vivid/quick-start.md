@@ -1,8 +1,8 @@
 ---
 title: 快速开始
 description: 快速上手 Vivid ActorSystem
-published: false
-date: 2024-07-04T09:19:24.823Z
+published: true
+date: 2024-07-04T09:20:31.726Z
 tags: actorsystem, actor, vivid
 editor: markdown
 dateCreated: 2024-06-21T06:13:28.417Z
