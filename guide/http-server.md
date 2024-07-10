@@ -2,7 +2,7 @@
 title: HTTP 服务器
 description: 快速搭建基于 Fiber 的包含 ActorSystem 的 HTTP 服务器
 published: true
-date: 2024-07-10T08:35:02.932Z
+date: 2024-07-10T08:43:26.190Z
 tags: actorsystem, actor, http, fiber
 editor: markdown
 dateCreated: 2024-07-10T08:31:35.795Z
@@ -12,7 +12,7 @@ dateCreated: 2024-07-10T08:31:35.795Z
 在 Minotaur 中内置了基于 [Fiber](https://gofiber.io) 设计的 HTTP 服务器模块，我们仅需要创建一个 FiberService 便可以得到一个支持 ActorSystem 的服务器。
 
 # 定义 FiberService
-首先我们通过实现 tranposrt.FiberService 接口来接收 transport.FiberKit 的结构实例。
+首先我们通过实现 tranposrt.FiberService 接口来接收 transport.FiberKit 的结构实例：
 
 ```go
 package main
@@ -47,7 +47,6 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/core/transport"
-	"github.com/kercylan98/minotaur/core/vivid"
 )
 
 type PingService struct {
