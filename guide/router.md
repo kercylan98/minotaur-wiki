@@ -1,15 +1,38 @@
 ---
-title: 客户端消息路由
+title: 多级消息路由器
 description: 通过 router.Multistage 路由客户端消息
 published: true
-date: 2024-07-10T09:43:42.733Z
+date: 2024-07-10T09:47:53.293Z
 tags: router, message, server, proto
 editor: markdown
 dateCreated: 2024-07-10T09:43:42.733Z
 ---
 
 # 介绍
-在 Socket 开发过程中，一定会面临消息路由的问题，最简单的方案便是通过 switch 来 case 每一个消息号。在 Minotaur 中，提供了 router.Multistage 来对消息路由进行处理。
+在 Socket 开发过程中，一定会面临消息路由的问题，最简单的方案便是通过 switch 来 case 每一个消息号。在 Minotaur 中，提供了 router.Multistage 来对消息路由进行处理，Multistage 是支持多级分类的路由器。我们可以通过 router.NewMultistage 函数创建，例如：
+
+```go
+router.NewMultistage[func(conn *transport.Conn, packet transport.Packet)]()
+```
+
+router.NewMultistage 是一个泛型函数，接受函数类型作为处理器类型，如果泛型类型不是 func 的话，将会发生 panic：
+
+```go
+func NewMultistage[HandleFunc any](options ...MultistageOption[HandleFunc]) *Multistage[HandleFunc] {
+  if reflect.TypeOf((*HandleFunc)(nil)).Elem().Kind() != reflect.Func {
+		panic(fmt.Errorf("handle must be a function type"))
+	}
+	r := &Multistage[HandleFunc]{
+		routes: make(map[any]HandleFunc),
+		subs:   make(map[any]*Multistage[HandleFunc]),
+	}
+	for _, option := range options {
+		option(r)
+	}
+	return r
+}
+
+```
 
 > Multistage 是一个支持多级路由的路由器，它并不是开箱即用，而是需要对处理函数进行定义后才可使用。
 {.is-info}
