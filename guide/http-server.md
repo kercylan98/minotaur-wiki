@@ -2,7 +2,7 @@
 title: HTTP 服务器
 description: 快速搭建基于 Fiber 的包含 ActorSystem 的 HTTP 服务器
 published: true
-date: 2024-07-10T08:43:26.190Z
+date: 2024-07-10T08:47:32.680Z
 tags: actorsystem, actor, http, fiber
 editor: markdown
 dateCreated: 2024-07-10T08:31:35.795Z
@@ -87,7 +87,7 @@ func (f *PingService) onPing(ctx *fiber.Ctx) error {
 }
 
 func main() {
-	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
 		options.WithModule(transport.NewFiber(":8877").BindService(new(PingService)))
 	})
 }
