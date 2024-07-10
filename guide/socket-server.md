@@ -2,7 +2,7 @@
 title: Socket 服务器
 description: 创建基于 gnet 的包含 ActorSystem 的 Socket 服务器
 published: true
-date: 2024-07-10T09:07:49.780Z
+date: 2024-07-10T09:17:03.204Z
 tags: actor, gnet, tcp, udp, unix domain, actor system
 editor: markdown
 dateCreated: 2024-07-10T09:07:49.780Z
@@ -37,7 +37,7 @@ func (s *SocketService) onConnectionPacket(kit *transport.GNETKit, conn *transpo
 }
 
 func main() {
-	system := vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
+	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
 		options.WithModule(
 			transport.NewTCP(":8000").BindService(new(SocketService)),
 			transport.NewTCP4(":8001").BindService(new(SocketService)),
