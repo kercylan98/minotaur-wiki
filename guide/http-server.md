@@ -2,8 +2,8 @@
 title: HTTP 服务器
 description: 快速搭建基于 Fiber 的包含 ActorSystem 的 HTTP 服务器
 published: true
-date: 2024-07-10T08:47:32.680Z
-tags: actorsystem, actor, http, fiber
+date: 2024-07-11T06:52:15.356Z
+tags: actor, http, fiber, actor system
 editor: markdown
 dateCreated: 2024-07-10T08:31:35.795Z
 ---
