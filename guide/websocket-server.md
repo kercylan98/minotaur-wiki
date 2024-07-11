@@ -2,8 +2,8 @@
 title: WebSocket 服务器
 description: 快速搭建基于 gnet 或 Fiber 的包含 ActorSystem 的 WebSocket 服务器
 published: true
-date: 2024-07-10T08:59:10.905Z
-tags: actorsystem, actor, fiber, gnet, websocket
+date: 2024-07-11T06:52:39.733Z
+tags: actor, fiber, gnet, websocket, actor system
 editor: markdown
 dateCreated: 2024-07-10T08:59:10.905Z
 ---
