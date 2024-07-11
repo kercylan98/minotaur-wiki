@@ -2,7 +2,7 @@
 title: Actor System
 description: 并行计算核心重量级结构
 published: true
-date: 2024-07-11T09:55:53.912Z
+date: 2024-07-11T09:56:32.804Z
 tags: actor, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -89,7 +89,7 @@ func main() {
 {.is-info}
 
 
-## WithName 指定 ActorSystem 的名称
+## WithName 名称
 该可选项将设置 ActorSystem 的名称。
 ```go
 	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
@@ -97,7 +97,7 @@ func main() {
 	})
 ```
 
-## WithModule 为 ActorSystem 加载模块
+## WithModule 加载模块
 模块是对 ActorSystem 的扩展，例如集群、网络等都是通过模块来注入的。
 ```go
 	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
@@ -105,7 +105,7 @@ func main() {
 	})
 ```
 
-## WithLoggerProvider 使用指定的日志记录器
+## WithLoggerProvider 日志记录器
 ActorSystem 内部使用了 `toolkit/log` 包的日志记录器，你可以通过该可选项指定其使用的日志记录器，只要是 `slog.Logger` 就可以！
 ```go
 	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
