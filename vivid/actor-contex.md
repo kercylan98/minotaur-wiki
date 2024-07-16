@@ -2,7 +2,7 @@
 title: ActorContext
 description: 万物皆是 Actor
 published: true
-date: 2024-07-16T13:47:37.117Z
+date: 2024-07-16T14:21:16.116Z
 tags: actor, actor system, actor context
 editor: markdown
 dateCreated: 2024-07-11T10:08:05.267Z
@@ -61,11 +61,100 @@ func main() {
 }
 ```
 
-## 可选项
+# 指定可选项
+在创建 Actor 时，我们还可以通过可选项来设置一些额外的特征，仅需要在 `ActorOf` 函数中传入可选项编辑函数即可：
+```go
+system.ActorOf(func() vivid.Actor {
+	return &HelloActor{}
+}, func(options *vivid.ActorOptions) {
+	// options...
+})
+```
+就这样，将可选项编辑函数作为可变参传入即可。
 
-### 指定生命期限
-有一些情况下，我们可能
+> 传入多个编辑函数可能会导致靠后的可选项覆盖靠前的可选项，因为它们都会被执行。另外，通常建议通过 `With` 函数来进行编辑，如若直接赋值可能会发生不可预知的问题。
+> {.is-warning}
 
+## 指定名称
+默认情况下，Actor 的名称将会是一个自增的计数，该计数来自于父 Actor 的子 Actor 生成次数（销毁不会减少），如果需要指定特定名称，那么可以使用该可选项：
+```go
+func (o *ActorOptions) WithName(name string) *ActorOptions
+```
+
+## 名称前缀
+在 vivid 中，默认的 Actor 是不携带名称前缀的，如果指定了该可选项，将会包含一段名称前缀，并以 `-` 进行分隔。
+```go
+func (o *ActorOptions) WithNamePrefix(prefix string) *ActorOptions
+```
+
+## 指定父 Actor
+在默认情况下，Actor 的父 Actor 将会来自调用 `ActorOf` 的 Actor，该可选项允许将父 Actor 特殊的指定为其他的 Actor。
+```go
+func (o *ActorOptions) WithParent(parent ActorRef) *ActorOptions 
+```
+
+> 对于 ActorSystem 的 `ActorOf` 调用，那么父 Actor 将会是内置的 `root(user) Actor`。
+{.is-info}
+
+## 持久化
+在 vivid 中，Actor 是默认支持基于内存存储的持久化的，在 Actor 被重启时候，将通过快照结合事件回放将 Actor 的状态进行恢复。当我们需要调整存储器或触发快照的限制时，便可通过这两个可选项进行设置：
+
+### 指定持久化存储器和持久化名称
+```go
+func (o *ActorOptions) WithPersistence(storage Storage, name string) *ActorOptions
+```
+
+### 指定触发快照所需事件数
+```go
+func (o *ActorOptions) WithPersistenceEventLimit(limit int) *ActorOptions 
+```
+
+## 设置邮箱
+默认情况下，Actor 将会使用内置的 FIFO 事件驱动邮箱作为 Actor 的消息队列，如果需要特殊实现，可使用该可选项：
+```go
+func (o *ActorOptions) WithMailbox(producer MailboxProducer) *ActorOptions
+```
+
+## 设置调度器
+默认的 Actor 调度器是基于 `ants` 实现的调度器，如果需要特殊实现，可使用该可选项：
+```go
+func (o *ActorOptions) WithDispatcher(producer DispatcherProducer) *ActorOptions
+```
+
+## 启用定时调度器
+默认情况下，Actor 的调度器是不启用的，当 Actor 需要执行定时任务时，可通过该选项来启用调度器：
+```go
+func (o *ActorOptions) WithScheduler(enable bool) *ActorOptions
+```
+该调度器背后是基于 `github.com/RussellLuo/timingwheel` 仓库实现的 `chrono.Scheduler` 时间轮调度器，它不仅支持定时任务、循环任务、延迟任务，也支持根据 `cron` 表达式创建定时任务。
+
+> 在为 Actor 指定生命周期或处理消息的生命周期后，也会启用调度器。
+{.is-info}
+
+
+## 指定生命期限
+有一些 Actor 我们可能希望它仅运行一段时间，这时候就可以通过该可选项来完成。
+
+该函数接受一个持续时间作为参数，Actor 的运行将在到达该时间后自动停止。
+```go
+func (o *ActorOptions) WithMessageDeadline(deadline time.Duration) *ActorOptions
+```
+
+## 指定消息消费期限
+该可选项与 `WithMessageDeadline` 类似，但是它是以消费消息间隔作为期限的，当我们需要 Actor 空闲一段时间后自动销毁，那么便可以使用它。
+
+它将在 Actor 接收消息时移除计时任务，在消费消息结束时创建计时任务，在这段期间如果没有新的消息，那么将销毁 Actor。
+
+```go
+func (o *ActorOptions) WithMessageDeadline(deadline time.Duration) *ActorOptions 
+```
+
+## 冲突复用
+该可选项适用于类似单例 Actor 的场景，它会在 Actor 已存在的时候返回已有 Actor 的引用，例如在同一个父 Actor 下创建两个名称相同的 Actor，如果没有该可选项，将会引发 panic，否则将返回已有 Actor 的引用。
+
+```go
+func (o *ActorOptions) WithConflictReuse(enable bool) *ActorOptions
+```
 
 # 处理消息
 为了赋予 Actor 能力，我们需要使得其能够处理消息，由于我们实现了 vivid.Actor 接口的 OnReceive 函数，所有消息均会通过该函数进行传入，包括生命周期。
@@ -92,8 +181,8 @@ func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
  生命周期       | 描述                                                              
 --------------|-----------------------------------------------------------------
  OnLaunch     | Actor 收到的第一条消息，表明 Actor 已经准备就绪，可以处理消息。该阶段通常被用于初始化 Actor 的运行时状态。 
- OnRestarting | 当 Actor 重启时将会收到该消息，在重启完成后将会收到 OnLaunch 消息。                      
  OnTerminate  | 当收到该消息时表明 Actor 在处理完该消息后将被销毁。该阶段通常被用于释放或持久化 Actor 的运行时状态。       
+ OnRestarting | 当 Actor 重启时将会收到该消息，在重启完成后将会收到 OnLaunch 消息。                      
  OnTerminated | 当 Actor 已被销毁时将会收到该消息，通常用于记录日志、计数等情况。                            
 
 如何监听生命周期呢？其实和处理消息一样，只需要对类型断言是否为生命周期类型即可：
