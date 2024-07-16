@@ -2,7 +2,7 @@
 title: Stream 客户端
 description: 流式传输客户端
 published: true
-date: 2024-07-16T03:58:49.462Z
+date: 2024-07-16T04:02:34.668Z
 tags: websocket, socket, stream, client
 editor: markdown
 dateCreated: 2024-07-16T03:58:49.462Z
@@ -16,6 +16,10 @@ Minotaur 中提供了基于 Actor 模型设计的通用 `StreamClient` 结构，
 - ConnectionOpenedHandler：当连接打开时
 - ConnectionPacketHandler：当收到数据包时
 - ConnectionClosedHandler：当连接关闭时
+
+> StreamClient 还将在连接异常断开时根据退避指数算法进行至多 10 次的重连，重连的实现是依赖 Actor 的监管策略实现的，如果需要禁用重连或进行更细节的控制，仅需要指定监管策略即可！
+{.is-info}
+
 
 # 使用
 使用方式非常简单，我们仅需要通过 `ActorSystem` 创建它的 Actor 实例即可。
@@ -69,6 +73,9 @@ ConnectionOpenedHandler: func(ctx vivid.ActorContext) {
 
 > 为什么还需要 `SetContext(websocket.BinaryMessage)` 这段繁杂的内容呢？这是根据不同的流客户端实现来决定的，在内置的 `WebSocket` 实现中，会根据上下文来决定发送的消息类型是 `Text` 还是 `Binary`。
 {.is-info}
+
+# 关闭连接
+如果需要关闭连接，可以直接调用上下文的 `Terminate` 或 `TerminateGracefully` 函数即可，客户端的实现是完全兼容 `vivid` 的。
 
 # StreamClientCore
 如果需要基于该客户端实现不同的传输协议，仅需要实现 `transport.StreamClientCore` 接口即可，这个接口是这样的：
