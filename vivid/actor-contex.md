@@ -2,7 +2,7 @@
 title: ActorContext
 description: 万物皆是 Actor
 published: true
-date: 2024-07-16T14:34:58.481Z
+date: 2024-07-16T14:35:14.671Z
 tags: actor, actor system, actor context
 editor: markdown
 dateCreated: 2024-07-11T10:08:05.267Z
@@ -202,11 +202,6 @@ func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
 一个 Actor 通常是有状态的，默认情况下，发生异常情况后状态便会通知，通过状态持久化，我们可以在 Actor 启动时进行状态的恢复，并且根据持久化存储器，将不限于从内存、硬盘还是网络进行恢复。
 
 要实现状态的持久化，首先便是要确保 Actor 由事件来驱动状态的改变，除了一些基本类型外，目前需要使用 `protobuf` 来定义 Actor 的状态及事件（因为它们需要被序列化）。
-
-接下来我们通过一个例子来看一下整个过程：
-```go
-// todo
-```
 
 ## 事件记录
 在 Actor 运行过程中，当我们改变状态后，可以通过 `ctx.StatusChanged` 函数记录该事件，在 Actor 启动时，将通过事件回放来恢复 Actor 的状态。
