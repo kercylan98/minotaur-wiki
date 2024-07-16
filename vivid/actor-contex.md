@@ -2,7 +2,7 @@
 title: ActorContext
 description: 万物皆是 Actor
 published: true
-date: 2024-07-16T14:21:16.116Z
+date: 2024-07-16T14:34:58.481Z
 tags: actor, actor system, actor context
 editor: markdown
 dateCreated: 2024-07-11T10:08:05.267Z
@@ -96,7 +96,7 @@ func (o *ActorOptions) WithParent(parent ActorRef) *ActorOptions
 > 对于 ActorSystem 的 `ActorOf` 调用，那么父 Actor 将会是内置的 `root(user) Actor`。
 {.is-info}
 
-## 持久化
+## 持久化配置
 在 vivid 中，Actor 是默认支持基于内存存储的持久化的，在 Actor 被重启时候，将通过快照结合事件回放将 Actor 的状态进行恢复。当我们需要调整存储器或触发快照的限制时，便可通过这两个可选项进行设置：
 
 ### 指定持久化存储器和持久化名称
@@ -198,3 +198,52 @@ func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
 }
 ```
 
+# 状态持久化
+一个 Actor 通常是有状态的，默认情况下，发生异常情况后状态便会通知，通过状态持久化，我们可以在 Actor 启动时进行状态的恢复，并且根据持久化存储器，将不限于从内存、硬盘还是网络进行恢复。
+
+要实现状态的持久化，首先便是要确保 Actor 由事件来驱动状态的改变，除了一些基本类型外，目前需要使用 `protobuf` 来定义 Actor 的状态及事件（因为它们需要被序列化）。
+
+接下来我们通过一个例子来看一下整个过程：
+```go
+// todo
+```
+
+## 事件记录
+在 Actor 运行过程中，当我们改变状态后，可以通过 `ctx.StatusChanged` 函数记录该事件，在 Actor 启动时，将通过事件回放来恢复 Actor 的状态。
+
+例如：
+```go
+system.ActorOf(func() vivid.Actor {
+	state := 0
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch m := ctx.Message().(type) {
+		case bool: // event
+			state++
+			ctx.StatusChanged(m)
+		}
+	})
+})
+```
+
+## 快照持久化
+为了避免事件过多造成内存膨胀，在事件数量达到一定数量后将会收到 `vivid.OnPersistenceSnapshot` 消息，我们可以通过监听该消息来调用 `ctx.PersistSnapshot` 函数持久化完整状态的快照，当然，也可以随时调用。
+
+在调用 `PersistSnapshot` 函数后，旧的事件将被清理。在状态恢复时，将会发送一个快照类型消息后进行事件回放。
+
+```go
+system.ActorOf(func() vivid.Actor {
+	state := &Snapshot{}
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch m := ctx.Message().(type) {
+		case vivid.OnLaunch:
+			ctx.PersistSnapshot(&Snapshot{
+				Counter: 100,
+			})
+		case *Snapshot: // recover snapshot
+			state = m
+		}
+	})
+})
+```
+
+在这个例子中，我们在启动时持久化了 `Snapshot` 类型的快照，在 Actor 下次启动时，便会收到 `Snapshot` 类型的消息，用于恢复状态。
