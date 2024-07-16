@@ -2,7 +2,7 @@
 title: Stream 客户端
 description: 流式传输客户端
 published: true
-date: 2024-07-16T04:02:34.668Z
+date: 2024-07-16T05:43:27.153Z
 tags: websocket, socket, stream, client
 editor: markdown
 dateCreated: 2024-07-16T03:58:49.462Z
@@ -39,7 +39,7 @@ import (
 func main() {
 	system := vivid.NewActorSystem()
 	system.ActorOf(func() vivid.Actor {
-		return transport.NewStreamClient(&transport.StreamClientWebsocketCore{
+		return transport.NewStreamClient(&transport.StreamClientWebSocketCore{
 			Url: "ws://localhost:8877/ws",
 		}, transport.StreamClientConfig{
 			ConnectionOpenedHandler: func(ctx vivid.ActorContext) {
@@ -98,7 +98,7 @@ type StreamClientCore interface {
 ## WebSocket
 目前基于 `fasthttp` 实现了 `WebSocket` 的流客户端核心，它包含了几个对外公开的字段：
 ```go
-type StreamClientWebsocketCore struct {
+type StreamClientWebSocketCore struct {
 	Url    string
 	Dialer *websocket.Dialer // 默认将使用 websocket.DefaultDialer
 	Header http.Header
@@ -107,7 +107,7 @@ type StreamClientWebsocketCore struct {
 
 在使用时，仅需要通过 `&` 进行实例化即可：
 ```go
-wsc := &transport.StreamClientWebsocketCore{
+wsc := &transport.StreamClientWebSocketCore{
 	Url: "ws://localhost:8877/ws",
 }
 ```
