@@ -2,7 +2,7 @@
 title: ActorContext
 description: 万物皆是 Actor
 published: true
-date: 2024-07-15T04:08:08.726Z
+date: 2024-07-16T13:47:37.117Z
 tags: actor, actor system, actor context
 editor: markdown
 dateCreated: 2024-07-11T10:08:05.267Z
@@ -60,6 +60,12 @@ func main() {
 	})
 }
 ```
+
+## 可选项
+
+### 指定生命期限
+有一些情况下，我们可能
+
 
 # 处理消息
 为了赋予 Actor 能力，我们需要使得其能够处理消息，由于我们实现了 vivid.Actor 接口的 OnReceive 函数，所有消息均会通过该函数进行传入，包括生命周期。
