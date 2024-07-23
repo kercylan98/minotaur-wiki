@@ -1,120 +1,62 @@
 ---
-title: 快速开始
-description: 快速上手 Vivid ActorSystem
+title: 从这里开始
+description: 了解并开始使用 Vivid
 published: true
-date: 2024-07-04T09:20:31.726Z
-tags: actorsystem, actor, vivid
+date: 2024-07-23T03:55:16.117Z
+tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-06-21T06:13:28.417Z
 ---
 
-# 创建 ActorSystem
-ActorSystem 是 Actor 的容器，也是管理 Actor 生命周期的中心点。它负责创建、和维护 Actor。
+# 什么是 Vivid？
 
-首先我们来创建一个 ActorSystem：
-```go
-package main
+Vivid 是 Minotaur 的核心实现之一，提供了对 Actor 模型的实现。如果您不熟悉 Actor 模型，可以先阅读以下相关文章：
+- [📖 Wikipedia: *讲述 Actor 模型的背景及基本概念。*](https://zh.wikipedia.org/wiki/%E6%BC%94%E5%91%98%E6%A8%A1%E5%9E%8B)
+- [📖 Rocketeer.be: *Concurrency in Erlang & Scala: The Actor Model。*](https://rocketeer.be/articles/concurrency-in-erlang-scala/)
+{.links-list}
 
-import "github.com/kercylan98/minotaur/core/vivid"
+首先，Vivid 是一个 Go 语言的包名，位于 `github.com/kercylan98/minotaur/engine/vivid` 路径下。
 
-func main() {
-	vivid.NewActorSystem()
-}
+在 Vivid 中提供了完整的 ActorSystem 实现，使您可以专注于业务需求的编写，而不必编写大量繁杂的可靠性代码来实现所谓的可靠性、容错和高性能。
+
+长期的 Go 语言游戏服务端开发实践中，我们发现，许多问题是由于内存泄漏、死锁、并发等问题造成的。而从经验来看，底层代码的实现正是事故的高发点。而为了解决这些问题，Vivid 采用了一系列优化技术和设计模式，帮助开发者有效避免常见的并发和内存管理问题，从而提高系统的稳定性和性能：
+
+- Vivid 通过 Actor 模型的无锁并发机制，实现了高效的并发控制。每个 Actor 独立处理自己的消息队列，避免了传统并发编程中复杂的锁定和同步问题。通过合理设计 Actor 之间的消息传递，开发者可以轻松实现高性能的并发应用。
+- 通过消息传递机制，Vivid 实现了无锁并发，这大大提高了系统的性能。与传统的多线程编程相比，无锁并发避免了上下文切换和锁竞争的开销，能够更高效地利用多核 CPU 的计算能力。此外，Vivid 对消息队列进行了优化，确保了消息传递的低延迟和高吞吐量。
+
+除此之外，Vivid 还提供了网络及集群方面的支持，使得编写并行的分布式程序更为简单轻松。
+
+> 在 Minotaur 中，vivid 的使用场景是非常多见的，基本大部分的实现均是 vivid 作为底部支撑，掌握 vivid，您将获得一把强大的分布式利剑（万剑归宗？逃~ 🙈）
+{.is-info}
+
+# 简单速览
+
+我们可以从一个示例简单的看一下使用过程，以打消潜意识内认为它很复杂的疑惑：
+
 ```
-
-就是如此简单，运行后会发现程序立刻结束了，这是因为 ActorSystem 的运行是非阻塞的。
-
-# 创建一个 Actor
-Actor 是参与计算的基本单元，实现一个 Actor 我们仅需要定义一个结构体并实现 `OnReceive(vivid.Message)` 函数即可。
-
-## 定义 Actor
-首先我们来定义一个 Actor，我们需要这个 Actor 收到 `string` 消息时打印 `Hello world`，并且回复一个 `Hello world`。
-
-```go
 package main
 
 import (
 	"fmt"
-	"github.com/kercylan98/minotaur/core/vivid"
+	"github.com/kercylan98/minotaur/engine/vivid"
 )
-
-type HelloActor struct{}
-
-func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
-	switch m := ctx.Message().(type) {
-	case string:
-		fmt.Println("Hello world")
-		ctx.Reply(m)
-	}
-}
-```
-
-## 运行 Actor
-定义完成 Actor 后接下来我们便可以通过 `ActorOf` 函数来启动 Actor，当前首先是要先创建 `ActorSystem`。
-
-```go
-package main
-
-import (
-	"fmt"
-	"github.com/kercylan98/minotaur/core/vivid"
-)
-
-type HelloActor struct{}
-
-func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
-	switch m := ctx.Message().(type) {
-	case string:
-		fmt.Println("Hello world")
-		ctx.Reply(m)
-	}
-}
 
 func main() {
 	system := vivid.NewActorSystem()
-	system.ActorOf(func() vivid.Actor {
-		return &HelloActor{}
+	defer system.Shutdown(true)
+
+	system.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				fmt.Println("Hello, World!")
+			}
+		})
 	})
 }
 ```
 
-## 发送消息并接收回复
-消息的传递依赖Actor的引用（ActorRef），而引用则可以在 `ActorOf` 之后通过返回值获取到，通过引用我们就可以向 Actor 发送消息了。
+这样便完成了 ActorSystem 以及 Actor 的创建，并且我们可以在屏幕上看到打印了 "Hello World!"。
 
-```go
-package main
-
-import (
-	"fmt"
-	"github.com/kercylan98/minotaur/core/vivid"
-)
-
-type HelloActor struct{}
-
-func (m *HelloActor) OnReceive(ctx vivid.ActorContext) {
-	switch m := ctx.Message().(type) {
-	case string:
-		fmt.Println("Hello world!")
-		ctx.Reply(m)
-	}
-}
-
-func main() {
-	system := vivid.NewActorSystem()
-	ref := system.ActorOf(func() vivid.Actor {
-		return &HelloActor{}
-	})
-
-	reply := system.Context().FutureAsk(ref, "Hey, sao ju~").AssertResult()
-	fmt.Println(reply)
-}
-```
-
-运行后便可以看到屏幕上输出了如下内容：
-
-```shell
-Hello world!
-Hey, sao ju~
-```
-
-就这样！您已成功创建了一个基本的示例。
+> 为了更好的体验，我们还提供了很多达到相同目的函数，例如提供器接口、函数式声明等，以便可以结合自身完成更高自由度的扩展。
+{.is-info}
