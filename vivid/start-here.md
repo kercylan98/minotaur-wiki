@@ -2,7 +2,7 @@
 title: 从这里开始
 description: 了解并开始使用 Vivid
 published: true
-date: 2024-07-23T03:55:16.117Z
+date: 2024-07-23T03:56:12.888Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-06-21T06:13:28.417Z
@@ -33,7 +33,7 @@ Vivid 是 Minotaur 的核心实现之一，提供了对 Actor 模型的实现。
 
 我们可以从一个示例简单的看一下使用过程，以打消潜意识内认为它很复杂的疑惑：
 
-```
+```go
 package main
 
 import (
