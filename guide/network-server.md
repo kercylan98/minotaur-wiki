@@ -2,7 +2,7 @@
 title: 网络服务器
 description: 未来的期许
 published: true
-date: 2024-07-22T15:14:49.117Z
+date: 2024-07-24T08:45:52.559Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-22T10:44:39.287Z
@@ -36,8 +36,8 @@ dateCreated: 2024-07-22T10:44:39.287Z
 在 Configuration 中提供了 `WithPerformance` 函数，它将允许我们定义 Actor 的行为，就像正常使用 Actor 一样。
 
 需要注意几点：
-- Stream Actor 在初始化完毕后会传入一个类型为 `stream.Writer` 的消息，它表示写入器的引用，我们可以向其发送 `*stream.Packet` 类型的消息来写入数据；
-- 在 Stream Actor 中，我们可以处理 `*stream.Packet` 类型的消息，它将表示客户端发送的数据；
+- 在 Stream Actor 中，我们可以处理 `*stream.Packet` 类型的消息，它将表示接收到的数据；
+- 单独地向 Writer 或 Stream 发送 vivid.OnTerminate 消息都将导致连接的断开，它们是等效的；
 
 > 当我们向 Stream Actor 或者其 Writer 发送类似于 `*vivid.OnTerminate` 这样的生命周期消息时，它将是生效的，如果关闭 Stream Actor，它会顺便销毁 Writer，而如果关闭 Writer，这个连接将无法写入数据！
 {.is-warning}
