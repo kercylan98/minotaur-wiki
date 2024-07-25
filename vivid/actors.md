@@ -2,7 +2,7 @@
 title: 与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T09:59:05.173Z
+date: 2024-07-25T15:17:18.528Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -439,3 +439,127 @@ if _, err := future.Result(); err != nil {
 
 ## Broadcast 非阻塞的 Ask
 正如标题所属，`Broadcast` 是对所有子 Actor 发起 `Ask` 请求，没有其他的特殊内容。
+
+# 监管
+在 Vivid 中，默认所有 Actor 均会受到顶级 Actor 的监管，我们将它叫做 `GuardActor`。
+
+监督允许您以声明方式描述当 Actor 内部抛出某些类型的异常时应该发生什么。
+
+默认的监督策略是，如果抛出异常，则会根据指数退避算法进行至多 10 次的重启。在许多情况下，您需要进一步自定义此行为。
+
+在我们为 Actor 指定监管策略后，将会由它的父 Actor 来执行，假若父 Actor 无法执行，那么将继续向上升级，直至顶级 Actor。
+
+> 默认的监管策略目前是非确定性的，这可能在经过测试或反馈后进行调整。
+{.is-warning}
+
+## 指定监管策略
+
+当我们需要自定义监管行为时，我们可以通过 `vivid.ActorOf` 函数的可变参数来定义可选项，在 `*vivid.ActorDescriptor` 中可通过 `WithSupervisionStrategyProvider` 来指定监管策略提供者。它接收一个 `supervision.StrategyProvider` 作为参数，并且接受一个可变参数作为日志记录选项。函数签名如下：
+
+```go
+func (d *ActorDescriptor) WithSupervisionStrategyProvider(provider supervision.StrategyProvider, loggers ...supervision.Logger) *ActorDescriptor
+```
+接口 `supervision.StrategyProvider` 的定义：
+```go
+type StrategyProvider interface {
+	GetStrategyProviderName() StrategyName
+	Provide() Strategy
+}
+```
+
+当我们实现该接口，便可以作为监管策略进行提供，如果我们的 `GetStrategyProviderName` 能够返回一个不为 `""` 的名称，那么它还将支持在集群内使用。
+> 需要注意的是，当 `loggers ...supervision.Logger` 参数不为空时，将无法在集群内使用。 
+{.is-warning}
+
+为了更方便的指定监管策略，我们还提供了函数式的提供者：
+```go
+supervision.FunctionalStrategyProvider
+```
+
+如果采用函数式的方式指定，我们仅需要如下进行即可：
+```go
+descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+	return ...
+}))
+```
+
+当然，不仅仅是监管策略提供者，对于监管策略，也支持函数式创建：
+```go
+descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+	return supervision.FunctionalStrategy(func(record *supervision.AccidentRecord) {
+		record.Supervisor.Stop(record.Victim)
+	})
+}))
+```
+
+## 监管者 Actor
+作为监管者，如果实现了 `supervision.Strategy` 接口，那么在没有为子 Actor 指定监管策略时，将会通过实现的策略进行决策。
+
+例如 `guard` Actor，便是通过匿名组合的方式实现了监管策略接口：
+
+```go
+package vivid
+
+import (
+	"github.com/kercylan98/minotaur/engine/vivid/supervision"
+	"github.com/kercylan98/minotaur/toolkit/log"
+	"time"
+)
+
+type guard struct {
+	supervision.Strategy
+}
+
+func (g *guard) OnReceive(ctx ActorContext) {
+	switch ctx.Message().(type) {
+	case *OnLaunch:
+		g.Strategy = supervision.OneForOne(10, time.Millisecond*200, time.Second*3, supervision.FunctionalDecide(func(record *supervision.AccidentRecord) supervision.Directive {
+			ctx.System().Logger().Warn("ActorSystem", log.String("info", "unsupervised accidents"), log.String("actor", record.Victim.LogicalAddress()), log.Any("reason", record.Reason))
+			if len(record.Stack) > 0 {
+				ctx.System().Logger().Error("trace", log.StackData("stack", record.Stack))
+			}
+			return supervision.DirectiveRestart
+		}))
+	}
+}
+
+```
+
+## OneForOne 一对一策略
+内置的监管策略中，包含一个较为复杂一对一监管策略，它将对发生意外的 Actor 执行重启、停止、升级或继续几个类型的指令。
+
+```go
+descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+	return supervision.OneForOne(3, time.Millisecond*100, time.Millisecond*100, supervision.FunctionalDecide(func(record *supervision.AccidentRecord) supervision.Directive {
+		return supervision.DirectiveRestart
+	}))
+}))
+```
+在这个例子中，当 Actor 发生意外时，则会通过退避指数算法进行最多 3 次的重启。
+
+## StopStrategy 停止策略
+当采用该策略时，发生意外时将会对其执行停止。
+
+```go
+descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+	return supervision.StopStrategy()
+}))
+```
+
+## RestartStrategy 重启策略
+当采用该策略时，发生意外时将会立即重启。
+
+```go
+descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+	return supervision.RestartStrategy()
+}))
+```
+
+## ResumeStrategy 继续策略
+当采用该策略时，发生意外时将会忽略错误继续运行。
+
+```go
+descriptor.WithSupervisionStrategyProvider(supervision.FunctionalStrategyProvider(func() supervision.Strategy {
+	return supervision.ResumeStrategy()
+}))
+```
