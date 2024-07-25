@@ -2,7 +2,7 @@
 title: 与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T05:21:30.357Z
+date: 2024-07-25T09:59:05.173Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -328,3 +328,114 @@ func main() {
 
 > 如果存在持久化策略，那么重启后将会对其状态进行恢复。
 {.is-info}
+
+# 消息传递
+了解完 Actor 的基本使用及生命周期后，让我们来详细聊聊消息的传递过程。
+
+在 Vivid 中，消息的传递是依赖于消息类型的，而不再是函数的调用，也就是所谓的协议。我们需要确保消息类型的正确，否则这条消息将会石沉大海。
+
+消息类型的定义很简单，如果只是简单的单机应用，任何类型都可以作为消息进行传递，消息的类型本质上是 `any` 类型，但是如果是需要跨网络通讯，那么需要确保消息是能够被序列化以及反序列化的。在 vivid 的内部，远程消息是依赖于 `prc` 进行实现的，默认的编解码器使用的是 `ProtoBuffer` 编解码器，如果需要其他编解码器，可自行实现。
+
+Actor 的消息交换有几种模式，我们首先定义一个仅用于示例的消息结构，然后逐一讲解：
+
+```go
+type ExampleMessage struct {
+	Content string
+}
+```
+
+## Tell 仅告知
+在该模式下，我们的消息非阻塞地被发送到目标 Actor，并且该消息无法被回复。
+
+Actor 的协议及行为定义：
+```go
+receiver := system.ActorOfF(func() vivid.Actor {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch m := ctx.Message().(type) {
+		case *ExampleMessage:
+			fmt.Println(m.Content)
+		}
+	})
+})
+```
+
+发送消息：
+```go
+system.Tell(receiver, &ExampleMessage{
+	Content: "Hi",
+})
+```
+
+## Ask 可寻址的告知
+在该模式下，我们的消息同样是非阻塞地被发送到目标 Actor，但是不同的是，该消息是可以被回复的，并且回复的消息也是可以循环回复的，也就是交谈！
+
+另外，有用的是，消息是可以多次回复的，消息的回复实际上与 `Ask(ctx.Sender(), "xxx")` 是等效的。
+
+接收者 Actor 的协议及行为定义：
+```go
+receiver := system.ActorOfF(func() vivid.Actor {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch m := ctx.Message().(type) {
+		case *ExampleMessage:
+			switch m.Content {
+			case "你好":
+				ctx.Reply(&ExampleMessage{Content: "你好"})
+			case "能帮我一下吗？":
+				ctx.Reply(&ExampleMessage{Content: "不能，谢谢！"})
+			}
+		}
+	})
+})
+```
+
+发送者 Actor 的协议及行为定义：
+```go
+system.ActorOfF(func() vivid.Actor {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch m := ctx.Message().(type) {
+		case *vivid.OnLaunch:
+			ctx.Ask(receiver, &ExampleMessage{Content: "你好"})
+		case *ExampleMessage:
+			switch m.Content {
+			case "你好":
+				ctx.Reply(&ExampleMessage{Content: "能帮我一下吗？"})
+			}
+		}
+	})
+})
+```
+
+在这个示例下，发送者在创建后便向接收者发送第一条消息，之后它们来回交流，直到发送者被拒绝。
+
+## FutureAsk 阻塞式的请求响应
+在该模式下发送消息将会返回一个 `future.Future` 对象，它可以被用来阻塞的等待消息。
+
+Actor 的协议及行为定义：
+```go
+receiver := system.ActorOfF(func() vivid.Actor {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch m := ctx.Message().(type) {
+		case *ExampleMessage:
+			ctx.Reply(m)
+		}
+	})
+})
+```
+
+发送消息：
+```go
+future := system.FutureAsk(receiver, &ExampleMessage{
+	Content: "Hi",
+})
+
+if _, err := future.Result(); err != nil {
+	panic(err)
+}
+```
+
+在 `FutureAsk` 函数中，还包含了一个可变参数，它将允许设置超时事件，如果这个值 <= 0，那么这个等待将会是无限期的，直至消息的到来。
+> 默认的超时时间为 1 秒
+{.is-info}
+
+## Broadcast 非阻塞的 Ask
+正如标题所属，`Broadcast` 是对所有子 Actor 发起 `Ask` 请求，没有其他的特殊内容。
