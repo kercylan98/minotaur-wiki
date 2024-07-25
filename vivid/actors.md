@@ -2,8 +2,8 @@
 title: 与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T15:17:18.528Z
-tags: actor, vivid, actor system
+date: 2024-07-25T15:18:31.905Z
+tags: actor, vivid, actor system, supervision
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
 ---
