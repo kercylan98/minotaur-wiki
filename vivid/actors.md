@@ -2,7 +2,7 @@
 title: 让我们与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T03:32:18.798Z
+date: 2024-07-25T03:38:07.370Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -161,5 +161,13 @@ system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
 > 如果您有幸看到这句，您便会知道：在 Minotaur 中，大多数功能都包含了 FunctionalXXX 的设计，它将允许开发者以更高的自由度进行自己的风格实践。
 {.is-info}
 
+还有没有更方便快捷的办法？我们还提供了 `ActorOfF` 函数，他将提供更简单的方式来实例化：
 
+```go
+system.ActorOfF(func() vivid.Actor {
+	return nil
+})
+```
 
+> 当我们使用函数式方式创建 Actor 时，我们的 Actor 将不再支持集群内创建，因为集群内需要注册名称，声明这个节点能提供什么 Actor！
+{.is-warning}
