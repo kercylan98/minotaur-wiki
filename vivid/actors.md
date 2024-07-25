@@ -2,7 +2,7 @@
 title: 让我们与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T03:46:19.043Z
+date: 2024-07-25T04:45:33.138Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -206,3 +206,125 @@ system.ActorOfF(
 	},
 )
 ```
+
+## 面向对象 Actor
+在我们上述的例子中，我们采用的便是面向对象的 Actor 设计，通过将 Actor 定义为一个结构体来进行使用，它通常能让代码逻辑更清晰，并且适合有状态或者功能复杂的 Actor 构建：
+```go
+type MyActor struct {}
+
+func (m *MyActor) OnReceive(ctx vivid.ActorContext) {
+	// none
+}
+```
+
+## 函数式 Actor
+另一种定义 Actor 的方式便是通过函数式接口来定义，在一些简单功能或者无状态的 Actor，为了快速实现，我们便可以通过这样来进行：
+```go
+vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+	// none
+})
+```
+
+# 生命周期
+由于 Actor 是一种有状态的资源，它从启动到结束均会经历多个阶段。
+
+比较特殊的是，子 Actor 的生命周期不会超过其父 Actor，所以当一个 Actor 在销毁或 ActorSystem 销毁时，所有的子 Actor 均会被销毁，并且 Actor 是可以停止自身或者被其它 Actor 停止的。
+
+## 创建 Actor
+Actor 可以创建任意数量的子 Actor，而子 Actor 又可以生成自己的子 Actor，从而形成 Actor 层次结构。在这个层次结构中只会存在一个根 Actor，即层次结构的顶部的 Actor。子 Actor 的生命周期与父 Actor 紧密相关。
+
+在创建 Actor 之后，我们会收到 `*vivid.OnLaunch` 消息，表示 Actor 已经开始工作，并且一次的消息处理均会携带贯穿 Actor 整个生命周期的 `ActorContext`。
+
+> 关于 `ActorContext` 我们则需要注意，它并不是一个并发安全的结构，除非你知道你在做什么，否则它不应该传递给外部进行使用。
+{.is-warning}
+
+```go
+system.ActorOfF(func() vivid.Actor {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch ctx.Message().(type) {
+		case *vivid.OnLaunch:
+      // do something
+		}
+	})
+})
+```
+
+这个简短的示例便让我们创建了一个 Actor，并且处理 `*vivid.OnLaunch` 生命周期事件，对于其他的事件，处理方式也是相同的。
+
+## 生成子代 Actor
+在我们上述的例子，我们知道生成 Actor 是通过 `ActorOf` 或 `ActorOfF` 函数实现的，那么如果要生成子代仅需要在不同的 `ActorContext` 上调用即可（即便是远程 Actor，依旧如此！）
+
+> 接下来，生成函数均表示 `ActorOf` 或 `ActorOfF` 函数。
+{.is-info}
+
+
+如果我们通过 `ActorSystem` 调用生成函数，实际上调用的也是我们层次结构的顶级根 Actor 的生成函数，也就是除了顶级 Actor，每一个 Actor 都会有父 Actor。
+
+当子代创建时，父 Actor 不会收到任何消息，因为这是已知的。当生成函数返回引用时，子 Actor 便已准备就绪。
+
+## 停止 Actor
+我们的 Actor 都可以通过 `ActorContext` 的 `Terminate` 函数来停止自身或其他 Actor，该函数的签名如下：
+
+```go
+func (ctx *actorContext) Terminate(target ActorRef, gracefully bool)
+```
+
+可以看到，`target` 作为要停止的目标 Actor 的引用，如果是自身，那么便会停止自身。而另一个 `gracefully` 参数则表示了是否优雅的停止，如果是，那么停止消息将会作为用户消息进行发送，等待前方用户消息处理完毕后进行停止，否则将会立即停止。
+
+> 优雅的停止是会向下覆盖的，当子 Actor 被销毁时，会选择继承父 Actor 的停止参数。
+{.is-info}
+
+在 Actor 收到停止消息时候，我们可以通过监听 `*vivid.OnTerminate` 消息来进行释放逻辑，例如持久化、记录日志等。
+
+在子 Actor 被停止时，还会向父 Actor 发送 `*vivid.OnTerminated` 消息以告知自身已停止，这个消息会携带其引用，另外，Actor 自身的停止，Actor 本身也会收到该消息。
+
+```go
+system.ActorOfF(func() vivid.Actor {
+	return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+		switch ctx.Message().(type) {
+		case *vivid.OnLaunch:
+			ctx.Terminate(ctx.Ref(), true)
+		}
+	})
+})
+```
+
+## 观察 Actor
+当我们需要观察一个非自己子 Actor 是否已结束的状态时，便可以通过 ActorContext 的 `Watch` 函数进行观测，它会在目标停止后向观察者推送 `*vivid.OnTerminated` 消息。当然，也可以通过 `UnWatch` 函数取消观察。
+
+```go
+func main() {
+	wait := new(sync.WaitGroup)
+	wait.Add(1)
+	system := vivid.NewActorSystem()
+	refA := system.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			// none
+		})
+	})
+
+	system.ActorOfF(func() vivid.Actor {
+		return vivid.FunctionalActor(func(ctx vivid.ActorContext) {
+			switch m := ctx.Message().(type) {
+			case *vivid.OnLaunch:
+				ctx.Watch(refA)
+			case *vivid.OnTerminated:
+				if m.TerminatedActor.Equal(refA) {
+					wait.Done()
+				}
+			}
+		})
+	})
+
+	system.Terminate(refA, false)
+
+	wait.Wait()
+	system.Shutdown(true)
+}
+```
+
+## 重启 Actor
+在 Actor 处理消息发送事故（panic）或 Actor 自身报告事故时，将会根据其监管者的定义决定是否重启，当 Actor 重启时，将会停止自身所有的子 Actor，并依次行走 `*vivid.OnRestarting`、`*vivid.OnTerminate`、`*vivid.OnTerminated`、`*vivid.OnRestarted`、`*vivid.OnLaunch` 多个生命周期，并在 `*vivid.OnLaunch` 收到时确保状态已重置。
+
+> 如果存在持久化策略，那么重启后将会对其状态进行恢复。
+{.is-info}
