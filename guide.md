@@ -2,7 +2,7 @@
 title: 欢迎使用 Minotaur
 description: 跟随我们的指引来熟悉 Minotaur
 published: true
-date: 2024-07-25T15:30:07.432Z
+date: 2024-07-25T15:30:24.550Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T09:41:53.264Z
@@ -19,5 +19,5 @@ dateCreated: 2024-06-19T09:41:53.264Z
 ***
 当完成以上内容时，对于 Minotaur 的基本使用也就掌握了。如果还需要更深入的了解，请继续向下阅读。
 
-- [🔎 更进一步 *Vivid Actors，并发！*](/vivid)
+- [🔎 更进一步 *Vivid - Actor Model 实现！*](/vivid)
 {.links-list}
