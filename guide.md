@@ -1,14 +1,14 @@
 ---
-title: 入门指南
+title: 欢迎使用 Minotaur
 description: 跟随我们的指引来熟悉 Minotaur
 published: true
-date: 2024-06-20T15:49:03.171Z
+date: 2024-07-25T15:28:25.762Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T09:41:53.264Z
 ---
 
-# 入门指南
+# 欢迎使用 Minotaur
 按照推荐顺序阅读以下引导，有利于快速了解并掌握 Minotaur 的基本使用。
 
 - [✔️ 先决条件 *在开始使用 Minotaur 前的做一些必要的检查。*](/guide/prerequisites)
