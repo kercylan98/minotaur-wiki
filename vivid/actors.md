@@ -2,7 +2,7 @@
 title: 让我们与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T03:38:07.370Z
+date: 2024-07-25T03:46:19.043Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -132,7 +132,7 @@ func (sys *ActorSystem) ActorOf(provider ActorProvider, configurator ...ActorDes
 {.is-info}
 
 ## ActorProvider
-ActorProvider 是 Actor 示例的提供者，它是一个接口类型，接口定义如下：
+ActorProvider 是 Actor 实例的提供者，它是一个接口类型，接口定义如下：
 
 ```go
 type ActorProvider interface {
@@ -169,5 +169,40 @@ system.ActorOfF(func() vivid.Actor {
 })
 ```
 
-> 当我们使用函数式方式创建 Actor 时，我们的 Actor 将不再支持集群内创建，因为集群内需要注册名称，声明这个节点能提供什么 Actor！
-{.is-warning}
+> 当我们使用函数式方式创建 Actor 时，我们的 Actor 将不再支持集群内创建，因为集群内需要注册名称，声明这个节点能提供什么 Actor！如果需要支持集群的函数式 Actor，可以考虑 `vivid.NewShortcutActorProvider`：
+> ```go
+> system.ActorOf(vivid.NewShortcutActorProvider("calc", func() vivid.Actor {
+> 	return nil
+> }))
+> ```
+
+## ActorDescriptorConfigurator
+ActorDescriptorConfigurator 是 Actor 描述符配置器，它是一个接口类型，接口定义如下：
+
+```go
+type ActorDescriptorConfigurator interface {
+	Configure(descriptor *ActorDescriptor)
+}
+```
+
+与 `ActorProvider` 一样，`ActorDescriptorConfigurator` 同样提供了它的函数式接口，这里便不过多赘述：
+
+```go
+system.ActorOf(
+	vivid.FunctionalActorProvider(func() vivid.Actor {
+		return nil
+	}), vivid.FunctionalActorDescriptorConfigurator(func(descriptor *vivid.ActorDescriptor) {
+		descriptor.WithName("hi")
+	}),
+)
+```
+
+```go
+system.ActorOfF(
+	func() vivid.Actor {
+		return nil
+	}, func(descriptor *vivid.ActorDescriptor) {
+		descriptor.WithName("hi")
+	},
+)
+```
