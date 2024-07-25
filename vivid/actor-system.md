@@ -1,114 +1,165 @@
 ---
-title: Actor System
-description: 并行计算核心重量级结构
+title: 让我们与 Actors 共舞
+description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-11T09:56:32.804Z
-tags: actor, actor system
+date: 2024-07-25T03:32:18.798Z
+tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
 ---
 
-# 介绍
-在 Minotaur 中，ActorSystem 是一个核心的重量级结构，负责管理所有的 Actor 及其生命周期、消息传递和调度。ActorSystem 提供了一个运行时环境，使得开发者可以专注于 Actor 的业务逻辑，而无需关心底层的并发和通信细节。
+# Vivid Actor
+[Actor 模型](https://zh.wikipedia.org/wiki/%E6%BC%94%E5%91%98%E6%A8%A1%E5%9E%8B)为编写并发和分布式系统提供了更高级别的抽象。它减轻了开发人员处理显式锁定和线程管理的负担，使编写正确的并发和并行系统变得更加容易。
 
-目前网络、集群等功能的实现均使用了 Actor 模型进行设计，这样带来的好处是毋庸置疑的，例如在意外发送 panic 时自动重启 Actor 恢复服务，并通过持久化进行状态的恢复、与本地相同的跨网络通讯接口等。
+我们在之前聊过，Actor 的通讯是通过向邮箱投递消息来完成的，这似乎会有点抽象，我们来用一个例子说明一下！
 
-接下来，我们来深入的了解 ActorSystem 的使用！
-
-# 创建 ActorSystem
-创建一个 ActorSystem 非常简单，甚至不需要启动它，只需要这样一行代码即可！
-```go
-vivid.NewActorSystem()
-```
-
-如此，ActorSystem 便创建并运行了，它会启动一个名为 `user` 的 Actor 来作为根 Actor，根 Actor 将会监管所有 Actor 的异常情况并重启它们。 
-
-为了方便使用，ActorSystem 提供了创建 Actor 的函数 `ActorOf`、`KindOf`，以及消息相关的 `Tell`、`Ask`、`FutureAsk`、`Broadcast`、`AwaitForward` 函数，这几个函数实际上也是调用根 Actor 对应的函数来进行处理的，所以这里便不再讲述。可以在 Actor 部分的文章中阅读。 
-
-> 在不需要使用的时候确保通过 `ShutdownGracefully` 或 `Shutdown` 函数来停止 ActorSystem 的运行，以确保每一个 Actor 得到销毁并正常处理退出逻辑，例如持久化等！
-{.is-info}
-
-# 停止 ActorSystem
-停止 ActorSystem 是有必要的，这样可以确保所有 Actor 的生命周期正常结束，根据不同的场景，我们提供了两种方式来停止 ActorSystem 的运行。
-
-```go
-system.Shutdown()
-system.ShutdownGracefully()
-```
-
-| **函数名**              | 描述                                                                                 |
-|------------------------|-------------------------------------------------------------------------------------|
-| **Shutdown**           | 向所有 Actor 递归的发送系统级终止消息，Actor 将立即进入销毁阶段                               |
-| **ShutdownGracefully** | 向所有 Actor 递归的发送用户级终止消息，Actor 将等待终止消息前的消息处理完毕后进入销毁阶段          |
-
-这两个函数都是阻塞的，它们会等待所有 Actor 被销毁后卸载所有模块并返回。
-
-# 获取 ActorSystem 名称
-虽然没什么用，但是我们提供了一个函数，可以用于获取到 ActorSystem 的名称，也许你会用它作为日志信息等。
-```go
-system.Name()
-```
-
-# 死信队列 DeadLetter（不健全的）
-在 Vivid 中，Actor 是通过消息驱动的，我们有时会发生将消息投递到不存在的 Actor 的邮箱这种情况，这样这条消息便会进入到死信队列中，我们可以通过获取死信队列来处理这些消息。
-
-通过 `DeadLetter` 函数，便可以获取到死信队列。
-```go
-system.DeadLetter()
-```
-
-# 类型化 ActorKind
-
-在 Vivid 中，Actor 不仅可以通过 `ActorOf` 函数创建，也可以通过类型化后的 `Kind` 标识符进行创建，`Kind` 本质上就只是一个 `string` 类型，用于表示 Actor 的类型名称。
-
-在通过 `Kind` 创建 Actor 之前，我们需要使用 `RegKind` 函数向 ActorSystem 注册 Actor 的工厂函数：
+依旧是第一步，我们创建一个系统，并用作接下来的展示：
 
 ```go
 package main
 
-import "github.com/kercylan98/minotaur/core/vivid"
-
-type Cat struct{}
-
-func (c *Cat) OnReceive(ctx vivid.ActorContext) {}
+import "github.com/kercylan98/minotaur/engine/vivid"
 
 func main() {
 	system := vivid.NewActorSystem()
-	system.RegKind("cat", func() vivid.Actor {
-		return new(Cat)
-	})
+	defer system.Shutdown(true)
 }
 ```
 
-通过这样，我们便可以使用 "cat" 这个名称来创建 Actor 了，它背后的逻辑是将 Actor 的工厂函数与 Kind 进行索引，而后在使用的时候直接调用工厂函数进行创建。这种方式不够灵活，但是在集群的情况下会十分有用，它可以在远程节点上完成 Actor 的创建！
+让我们考虑一下，假设我们的 Actor 会在收到打招呼时会进行回复，并且它拥有自己的名称：
 
-# 可选项
-在创建 ActorSystem 的时候，我们可能会想要自定义一些信息，例如 ActorSystem 的名称等。为此，我们为 ActorSystem 的创建函数增加了一个可变参，它接受 `func(options *vivid.ActorSystemOptions)` 类型的参数作为可选项的编辑函数。
+```go
+type (
+	GreetMessage      struct{ Name string }
+	GreetMessageReply struct {
+		Name    string
+		Content string
+	}
+)
 
-> 当传入多个编辑函数时，它们都会生效！
+func NewGreetActor(wg *sync.WaitGroup, name string, neighbor ...vivid.ActorRef) *GreetActor {
+	return &GreetActor{wg: wg, name: name, neighbor: neighbor}
+}
+
+type GreetActor struct {
+	wg       *sync.WaitGroup
+	name     string
+	neighbor []vivid.ActorRef
+}
+
+func (g *GreetActor) OnReceive(ctx vivid.ActorContext) {
+	switch m := ctx.Message().(type) {
+	case *vivid.OnLaunch:
+		g.onLaunch(ctx)
+	case *GreetMessage:
+		g.onGreet(ctx, m)
+	case *GreetMessageReply:
+		g.onGreetReply(ctx, m)
+	case *vivid.OnTerminated:
+		g.wg.Done()
+	}
+}
+
+func (g *GreetActor) onLaunch(ctx vivid.ActorContext) {
+	m := &GreetMessage{Name: g.name}
+	for _, ref := range g.neighbor {
+		ctx.Ask(ref, m)
+	}
+}
+
+func (g *GreetActor) onGreet(ctx vivid.ActorContext, m *GreetMessage) {
+	fmt.Println(fmt.Sprintf("%s 收到了来自 %s 的招呼", g.name, m.Name))
+	ctx.Reply(&GreetMessageReply{Name: g.name, Content: fmt.Sprintf("Hi %s, I'm %s", m.Name, g.name)})
+  
+  ctx.Terminate(ctx.Ref(), true)
+}
+
+func (g *GreetActor) onGreetReply(ctx vivid.ActorContext, m *GreetMessageReply) {
+	fmt.Println(fmt.Sprintf("%s 收到了来自 %s 的回复：%s", g.name, m.Name, m.Content))
+  
+  ctx.Terminate(ctx.Ref(), true)
+}
+```
+
+这段代码定义了两种消息类型，一种用于命令 Actor 问候某人，另一种用于 Actor 确认已问候，并且它们在收到打招呼或回应时均会打印。
+
+我们的 Actor 设计上，它可以拥有邻居，如果拥有，那么在启动时便会向邻居打招呼！这里的打招呼是使用 `Ask` 方法处理的，它是异步非阻塞的，并且当收到回复时将会作为消息一样发送过来，所以我们在消息类型里断言了 `*GreetMessageReply` 类型。另外我们还在 `onGreet` 方法内执行了一个 `Reply` 操作，这个函数是用于向发送人进行回复的，它是异步非阻塞的，并且是有可能会失败的，例如在发送人采用 `Tell` 方式时，将无法进行回复。
+
+另外，我们还在 `onGreet` 和 `onGreetReply` 方法里调用了 `ctx.Terminate(ctx.Ref(), true)`，这是我们期望 Actor 在处理完打招呼或收到打招呼回应时就结束运行。
+
+接下来，我们将创建两个 Actor，并让它们尝试我们的设想，继续编辑 main 函数：
+
+```go
+func main() {
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+	system := vivid.NewActorSystem()
+	defer system.Shutdown(true)
+
+	actor1 := system.ActorOfF(func() vivid.Actor {
+		return NewGreetActor(wg, "王老五")
+	})
+
+	system.ActorOfF(func() vivid.Actor {
+		return NewGreetActor(wg, "李老四", actor1)
+	})
+
+	wg.Wait()
+}
+```
+
+关于这里的 `sync.WaitGroup` 只是用来确保执行完成，因为 `Ask` 消息是不会等待收到消息的，如果消息还未进入邮箱，那么优雅停机是不会等待的。
+
+接下来，运行便可以看到屏幕输入了以下内容：
+```shell
+王老五 收到了来自 李老四 的招呼
+李老四 收到了来自 王老五 的回复：Hi 李老四, I'm 王老五
+```
+
+> 一个更为复杂的例子：[聊天室示例](/zh/guide/chat-room)
+{.is-info}
+
+# 风格化
+在上一小节中，我们的 Actor 是通过结构体声明的方式创建的，而在 Vivid 中还提供了多种方式来生成 Actor，它不限于是函数式或者面向对象的方式，这取决于您的趋向，更多时候，对于功能复杂的 Actor 建议使用结构体定义，这样可以在代码上更为清晰！
+
+首先我们需要先介绍 `ActorOf` 函数，它的函数签名如下：
+```go
+func (sys *ActorSystem) ActorOf(provider ActorProvider, configurator ...ActorDescriptorConfigurator) ActorRef
+```
+
+可以看到，它接收 `ActorProvider` 作为必填参数，同时接受 `ActorDescriptorConfigurator` 作为可选参数。
+> 多个 `ActorDescriptorConfigurator` 的传入是会向前覆盖的，它们均会被执行。
+{.is-info}
+
+## ActorProvider
+ActorProvider 是 Actor 示例的提供者，它是一个接口类型，接口定义如下：
+
+```go
+type ActorProvider interface {
+	GetActorProviderName() ActorProviderName
+  
+	Provide() Actor
+}
+```
+
+当实现这个接口时，便可以作为 Actor 的提供者，它用来实例化一个 Actor 对象，并且在重启时也会通过它进行状态的重置。
+
+而 `GetActorProviderName` 函数是做什么的呢？首先它返回的 `ActorProviderName` 是 `string` 类型的别名，它被用在集群中，如果不考虑集群，可以简单的返回 `""` 字符串即可。
+
+是不是感觉比较麻烦？创建一个对象还要做如此复杂的实现！对此，我们还提供了一个函数式的提供者 `vivid.FunctionalActorProvider`，它可以方便地进行 Actor 的实例化，例如：
+
+```
+system.ActorOf(vivid.FunctionalActorProvider(func() vivid.Actor {
+	return nil
+}))
+```
+
+它不仅可以方便地实现 Actor 的实例化，并且也对自动补全友好！
+
+![actor-funcational-provider.gif](/actor-system/actor-funcational-provider.gif)
+
+> 如果您有幸看到这句，您便会知道：在 Minotaur 中，大多数功能都包含了 FunctionalXXX 的设计，它将允许开发者以更高的自由度进行自己的风格实践。
 {.is-info}
 
 
-## WithName 名称
-该可选项将设置 ActorSystem 的名称。
-```go
-	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
-		options.WithName("example")
-	})
-```
 
-## WithModule 加载模块
-模块是对 ActorSystem 的扩展，例如集群、网络等都是通过模块来注入的。
-```go
-	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
-		options.WithModule(transport.NewFiber(":8080"))
-	})
-```
-
-## WithLoggerProvider 日志记录器
-ActorSystem 内部使用了 `toolkit/log` 包的日志记录器，你可以通过该可选项指定其使用的日志记录器，只要是 `slog.Logger` 就可以！
-```go
-	vivid.NewActorSystem(func(options *vivid.ActorSystemOptions) {
-		options.WithLoggerProvider(slog.Default)
-	})
-```
