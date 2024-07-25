@@ -1,8 +1,8 @@
 ---
 title: 网络服务器
-description: 未来的期许
+description: 通过对 gnet 及 fiber 的扩展实现网络功能
 published: true
-date: 2024-07-24T08:45:52.559Z
+date: 2024-07-25T15:24:31.143Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-22T10:44:39.287Z
