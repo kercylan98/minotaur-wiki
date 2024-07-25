@@ -1,8 +1,8 @@
 ---
-title: 让我们与 Actors 共舞
+title: 与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T04:45:33.138Z
+date: 2024-07-25T05:21:30.357Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
