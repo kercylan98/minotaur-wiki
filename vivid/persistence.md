@@ -2,7 +2,7 @@
 title: 状态持久化
 description: 为 Actors 创建记忆点，在启动时恢复
 published: true
-date: 2024-07-26T11:00:17.757Z
+date: 2024-07-26T11:07:52.304Z
 tags: actor, vivid, actor system, persistence
 editor: markdown
 dateCreated: 2024-07-25T16:27:09.041Z
@@ -117,6 +117,16 @@ StateChangeEventApply(event Message)
 ```go
 SaveSnapshot(snapshot Message)
 ```
+
+## Persistence 主动持久化
+
+事件的应用及快照的保存仅仅只是在内存里的行为，而真正持久化是发生在 Actor 停止的时候。当然我们也可以主动通过该函数进行持久化操作，函数签名如下：
+
+```go
+Persistence() error
+```
+
+我们建议周期性的进行主动持久化。
 
 ***
 
