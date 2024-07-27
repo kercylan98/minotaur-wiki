@@ -2,7 +2,7 @@
 title: 网络服务器
 description: 通过对 gnet 及 fiber 的扩展实现网络功能
 published: true
-date: 2024-07-25T15:24:31.143Z
+date: 2024-07-27T05:24:17.105Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-22T10:44:39.287Z
@@ -76,6 +76,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/engine/stream"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/engine/vivid/behavior"
 )
 
 func main() {
@@ -83,16 +84,21 @@ func main() {
 
 	fiberApp := fiber.New()
 	fiberApp.Get("/ws", stream.NewFiberWebSocketHandler(fiberApp, system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
-		var writer vivid.ActorRef
-		c.WithPerformance(vivid.ActorFunctionalPerformance(func(ctx vivid.ActorContext) {
-			switch m := ctx.Message().(type) {
-			case stream.Writer:
-				writer = m
-				ctx.Tell(writer, stream.NewPacketDC([]byte("Hello!"), websocket.TextMessage))
-			case *stream.Packet:
-				ctx.Tell(writer, m) // echo
-			}
-		}))
+		c.WithPerformance(vivid.FunctionalStatefulActorPerformance(
+			func() behavior.Performance[vivid.ActorContext] {
+				var writer stream.Writer
+				return vivid.FunctionalActorPerformance(func(ctx vivid.ActorContext) {
+					switch m := ctx.Message().(type) {
+					case stream.Writer:
+						writer = m
+						ctx.Tell(writer, stream.NewPacketDC([]byte("Hello!"), websocket.TextMessage))
+					case *stream.Packet:
+						ctx.Tell(writer, m) // echo
+					}
+				})
+			}).
+			Stateful(),
+		)
 	})))
 
 	if err := fiberApp.Listen(":8888"); err != nil {
@@ -113,6 +119,7 @@ package main
 import (
 	"github.com/kercylan98/minotaur/engine/stream"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/engine/vivid/behavior"
 	"github.com/panjf2000/gnet/v2"
 )
 
@@ -120,18 +127,22 @@ func main() {
 	system := vivid.NewActorSystem()
 
 	if err := gnet.Run(stream.NewGNETEventHandler(system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
-		var writer stream.Writer
-		c.WithPerformance(vivid.ActorFunctionalPerformance(func(ctx vivid.ActorContext) {
-			switch m := ctx.Message().(type) {
-			case stream.Writer:
-				writer = m
-			case *stream.Packet:
-				ctx.Tell(writer, m) // echo
-			}
-		}))
+		c.WithPerformance(vivid.FunctionalStatefulActorPerformance(
+			func() behavior.Performance[vivid.ActorContext] {
+				var writer stream.Writer
+				return vivid.FunctionalActorPerformance(func(ctx vivid.ActorContext) {
+					switch m := ctx.Message().(type) {
+					case stream.Writer:
+						writer = m
+					case *stream.Packet:
+						ctx.Tell(writer, m) // echo
+					}
+				})
+			}).
+			Stateful(),
+		)
 	})), "tcp://127.0.0.1:8080"); err != nil {
 		panic(err)
 	}
 }
-
 ```
