@@ -2,7 +2,7 @@
 title: 简单的聊天室
 description: 简单高效、并发安全的聊天室
 published: true
-date: 2024-07-24T09:18:46.575Z
+date: 2024-07-27T05:25:06.358Z
 tags: actor, websocket, actor system, chat-room
 editor: markdown
 dateCreated: 2024-07-24T09:18:46.575Z
@@ -314,6 +314,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kercylan98/minotaur/engine/stream"
 	"github.com/kercylan98/minotaur/engine/vivid"
+	"github.com/kercylan98/minotaur/engine/vivid/behavior"
 	"github.com/kercylan98/minotaur/examples/internal/chat-room/internal/manager"
 	"github.com/kercylan98/minotaur/examples/internal/chat-room/internal/user"
 )
@@ -328,7 +329,12 @@ func main() {
 	})
 
 	fiberApp.Get("/ws", stream.NewFiberWebSocketHandler(fiberApp, system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
-		c.WithPerformance(vivid.FunctionalActorPerformance(user.New(roomManager).OnReceive))
+		c.WithPerformance(vivid.FunctionalStatefulActorPerformance(
+			func() behavior.Performance[vivid.ActorContext] {
+				return vivid.FunctionalActorPerformance(user.New(roomManager).OnReceive)
+			}).
+			Stateful(),
+		)
 	})))
 
 	if err := fiberApp.Listen(":8080"); err != nil {
