@@ -2,7 +2,7 @@
 title: 远程访问
 description: 跨 ActorSystem 的网络访问
 published: true
-date: 2024-07-29T11:04:21.448Z
+date: 2024-07-31T02:17:12.205Z
 tags: actor, vivid, actor system, remoting
 editor: markdown
 dateCreated: 2024-07-29T11:04:21.448Z
@@ -16,23 +16,17 @@ dateCreated: 2024-07-29T11:04:21.448Z
 
 # 打开共享
 
-当我们的 ActorSystem 需要与其他 ActorSystem 交互时，必须通过可选项 `WithShared` 和 `WithPhysicalAddress` 来显示的开启远程功能。
-
-## 指定物理地址 WithPhysicalAddress
-
-该函数是来自 `ActorSystemConfiguration` 的一个选项，它将决定了监听其他 ActorSystem 访问的服务器地址：
-
-```go
-func (c *ActorSystemConfiguration) WithPhysicalAddress(address prc.PhysicalAddress) *ActorSystemConfiguration 
-```
-
-## 设置开启共享 WithShared
+当我们的 ActorSystem 需要与其他 ActorSystem 交互时，可通过选项 `WithShared` 来开启远程功能。
 
 该函数也是来自 `ActorSystemConfiguration` 的一个选项，它是用于开启网络共享的关键，同时它还接受一个可变参数可用于定义编解码器：
 
 ```go
-func (c *ActorSystemConfiguration) WithShared(shared bool, codec ...codec.Codec) *ActorSystemConfiguration
+func (c *ActorSystemConfiguration) WithShared(address prc.PhysicalAddress, codec ...codec.Codec) *ActorSystemConfiguration
 ```
+
+> 关于 `address` 它是用于绑定接受网络访问的地址，例如：`":8080"`
+{.is-info}
+
 
 ## 使用示例
 
@@ -53,13 +47,11 @@ func TestActorSystemConfiguration_WithSharedFutureAsk(t *testing.T) {
 	var receiverOnce, senderOnce sync.Once
 
 	system1 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithPhysicalAddress(":8080")
-		config.WithShared(true)
+		config.WithShared(":8080")
 	}))
 
 	system2 := vivid.NewActorSystem(vivid.FunctionalActorSystemConfigurator(func(config *vivid.ActorSystemConfiguration) {
-		config.WithPhysicalAddress(":8081")
-		config.WithShared(true)
+		config.WithShared(":8081")
 	}))
 
 	ref1 := system1.ActorOfF(func() vivid.Actor {
