@@ -2,7 +2,7 @@
 title: 与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-08-03T07:55:06.358Z
+date: 2024-08-03T07:57:21.141Z
 tags: actor, vivid, actor system, supervision
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -244,6 +244,10 @@ system.ActorOfF(func() vivid.Actor {
 	})
 })
 ```
+
+> `*vivid.OnLaunch` 消息是可以通过 `Reply` 函数进行回复的，这样它的父级 Actor 将会收到回复的消息，这在需要监听初始化完成的情况下非常有用！
+{.is-info}
+
 
 这个简短的示例便让我们创建了一个 Actor，并且处理 `*vivid.OnLaunch` 生命周期事件，对于其他的事件，处理方式也是相同的。
 
