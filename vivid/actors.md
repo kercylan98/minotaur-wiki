@@ -2,7 +2,7 @@
 title: 与 Actors 共舞
 description: 从示例到深入，掌握 Actors 的使用
 published: true
-date: 2024-07-25T15:18:31.905Z
+date: 2024-08-03T07:55:06.358Z
 tags: actor, vivid, actor system, supervision
 editor: markdown
 dateCreated: 2024-07-11T09:55:53.912Z
@@ -136,15 +136,11 @@ ActorProvider 是 Actor 实例的提供者，它是一个接口类型，接口�
 
 ```go
 type ActorProvider interface {
-	GetActorProviderName() ActorProviderName
-  
 	Provide() Actor
 }
 ```
 
 当实现这个接口时，便可以作为 Actor 的提供者，它用来实例化一个 Actor 对象，并且在重启时也会通过它进行状态的重置。
-
-而 `GetActorProviderName` 函数是做什么的呢？首先它返回的 `ActorProviderName` 是 `string` 类型的别名，它被用在集群中，如果不考虑集群，可以简单的返回 `""` 字符串即可。
 
 是不是感觉比较麻烦？创建一个对象还要做如此复杂的实现！对此，我们还提供了一个函数式的提供者 `vivid.FunctionalActorProvider`，它可以方便地进行 Actor 的实例化，例如：
 
@@ -462,14 +458,9 @@ func (d *ActorDescriptor) WithSupervisionStrategyProvider(provider supervision.S
 接口 `supervision.StrategyProvider` 的定义：
 ```go
 type StrategyProvider interface {
-	GetStrategyProviderName() StrategyName
 	Provide() Strategy
 }
 ```
-
-当我们实现该接口，便可以作为监管策略进行提供，如果我们的 `GetStrategyProviderName` 能够返回一个不为 `""` 的名称，那么它还将支持在集群内使用。
-> 需要注意的是，当 `loggers ...supervision.Logger` 参数不为空时，将无法在集群内使用。 
-{.is-warning}
 
 为了更方便的指定监管策略，我们还提供了函数式的提供者：
 ```go
