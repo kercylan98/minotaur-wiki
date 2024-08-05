@@ -2,7 +2,7 @@
 title: 从这里开始
 description: 了解并开始使用 Vivid
 published: true
-date: 2024-08-05T10:57:59.826Z
+date: 2024-08-05T13:32:31.414Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-06-21T06:13:28.417Z
@@ -67,9 +67,9 @@ func main() {
 
 如果需要快速了解 vivid 的网络传输性能，那么运行基准测试是最方便的。
 
-vivid 提供了非常快，非常非常快的远程处理。目前两个 Actor 在节点间每秒能够传输超过 600 万条消息！
+vivid 提供了非常快，非常非常快的远程处理。目前两个 Actor 在节点间每秒能够传输超过 1300 万条消息！
 
-![vivid-shared-speed.gif](/actor-system/vivid-shared-speed.gif)
+![branchmark-network.gif](/actor-system/branchmark-network.gif)
 
 ```shell
 ax benchmark network
