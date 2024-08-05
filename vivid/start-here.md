@@ -2,7 +2,7 @@
 title: 从这里开始
 description: 了解并开始使用 Vivid
 published: true
-date: 2024-08-05T10:40:47.179Z
+date: 2024-08-05T10:56:19.896Z
 tags: actor, vivid, actor system
 editor: markdown
 dateCreated: 2024-06-21T06:13:28.417Z
@@ -72,5 +72,5 @@ vivid 提供了非常快，非常非常快的远程处理。目前两个 Actor �
 ![vivid-shared-speed.gif](/actor-system/vivid-shared-speed.gif)
 
 ```shell
-minotaur-ax benchmark network
+ax benchmark network
 ```
