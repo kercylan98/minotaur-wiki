@@ -2,14 +2,14 @@
 title: 资源控制器
 description: 以进程为核心的资源控制器
 published: true
-date: 2024-07-22T15:23:34.688Z
+date: 2024-08-12T08:12:29.846Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-22T10:54:59.644Z
 ---
 
 # 介绍
-资源控制器(ResourceController)是 Minotaur 提供的低级功能，它以进程为基本单元，提供了针对进程的管理及通讯功能。同时，资源控制器还支持分布式网络通讯及集群模式。它通过 GRPC 和 ProtoBuffer 进行网络通讯，并使用基于流言算法(Gossip)实现的 memberlist 对集群的一致性进行管理，
+资源控制器(ResourceController)是 Minotaur 提供的低级功能，它以进程为基本单元，提供了针对进程的管理及通讯功能。同时，资源控制器还支持分布式网络通讯，它通过 GRPC 和 ProtoBuffer 进行网络通讯。
 
 虽然大多数情况下，应该无需使用到资源控制器，但是通过它，可以方便快速的构建分布式应用。
 
@@ -35,13 +35,6 @@ func (c *ResourceControllerConfiguration) WithPhysicalAddress(address PhysicalAd
 
 ```go
 func (c *ResourceControllerConfiguration) WithPhysicalAddress(address PhysicalAddress) *ResourceControllerConfiguration 
-```
-
-## 设置集群名称
-集群名称目前仅用作检查进程归属，暂无它用。
-
-```go
-func (c *ResourceControllerConfiguration) WithClusterName(name ClusterName) *ResourceControllerConfiguration
 ```
 
 # 进程
