@@ -2,7 +2,7 @@
 title: 先决条件
 description: 开始使用 Minotaur 前的必要条件
 published: true
-date: 2024-07-20T15:51:23.718Z
+date: 2024-08-14T11:35:48.561Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T03:06:28.535Z
@@ -29,7 +29,7 @@ Minotaur 中采用了 Actor Model 作为架构思想，使用前请务必了解�
 通过 `go get` 获取从 `Github` 到 [Minotaur](https://github.com/kercylan98/minotaur) ：
 
 ```shell
-go get -u github.com/kercylan98/minotaur@develop
+go get -u github.com/kercylan98/minotaur
 ```
 
 如果您位于中国内陆且无法访问 `Github`，可以尝试通过 [`GOPROXY.IO`](https://goproxy.io/docs/getting-started.html) 代理进行获取。
