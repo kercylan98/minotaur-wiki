@@ -2,14 +2,14 @@
 title: 先决条件
 description: 开始使用 Minotaur 前的必要条件
 published: true
-date: 2024-08-14T12:26:14.317Z
+date: 2024-08-14T12:26:43.050Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T03:06:28.535Z
 ---
 
 # Go
-Minotaur 目前需要 [Go](https://go.dev/) 版本 [1.22](https://go.dev/doc/devel/release#go1.22.0) 或以上。
+Minotaur 目前需要 [Go](https://go.dev/) 版本 [1.23](https://go.dev/doc/devel/release#go1.23.0) 或以上。
 
 # Generics 泛型
 在 Minotaur 的设计中包含了大量泛型的使用，务必先了解相关内容：
