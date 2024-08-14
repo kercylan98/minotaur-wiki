@@ -2,7 +2,7 @@
 title: 先决条件
 description: 开始使用 Minotaur 前的必要条件
 published: true
-date: 2024-08-14T11:35:48.561Z
+date: 2024-08-14T12:26:14.317Z
 tags: 
 editor: markdown
 dateCreated: 2024-06-19T03:06:28.535Z
@@ -31,5 +31,17 @@ Minotaur 中采用了 Actor Model 作为架构思想，使用前请务必了解�
 ```shell
 go get -u github.com/kercylan98/minotaur
 ```
+
+# 获取 Minotaur-AX CLI 工具
+
+Minotaur-AX CLI 工具是用于参与 Minotaur 开发及开发基于 Minotaur 项目的客户端工具。
+
+```shell
+go install github.com/kercylan98/minotaur/ax@latest
+```
+
+> 功能完善中。
+{.is-warning}
+
 
 如果您位于中国内陆且无法访问 `Github`，可以尝试通过 [`GOPROXY.IO`](https://goproxy.io/docs/getting-started.html) 代理进行获取。
