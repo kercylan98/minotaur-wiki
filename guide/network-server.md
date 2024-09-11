@@ -2,147 +2,194 @@
 title: 网络服务器
 description: 通过对 gnet 及 fiber 的扩展实现网络功能
 published: true
-date: 2024-07-27T05:24:17.105Z
+date: 2024-09-11T08:49:48.769Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-22T10:44:39.287Z
 ---
 
-# 自述
+# 介绍
 
-目前经过几轮重构及尝试来看，融入 HTTP、WebSocket、TCP、UDP 等网络服务器功能似乎比较困难，不是无法实现，而是没有找到比较优雅的实现方式，它总有或多或少的限制。
+网络传输是应用服务器的基石，负责处理客户端与服务器之间的网络通信。尤其在需要高并发、低延迟的场景中，基于 Socket 的网络服务器能够实现有效的双向通信，并为现代应用提供强大的数据传输能力。
 
-在 Minotaur 中，深度融入了 Actor 模型的思想，我们很希望将网络功能也融入进来，之前有尝试通过 Hook 的方式让用户去监听部分事件，但是经过本地模拟的测试发现，这种方式丧失了大量的灵活性。
+在 Minotaur 中提供了便利的 Socket 支持，它将能够方便快捷地创建基于 Actor 模型的 Socket 连接。
 
-目前一个新的包 `engine/stream` 正在进行这方面的尝试，敬请期待。
-
-> 如果您有好的想法或建议，也希望可以告知我们。可以通过仓库 issus 或邮件、群聊等方式进行联系，感谢！
+> 由于我们允许任何第三方的网络层实现，所以这并不是开箱即用的，但是这也不是十分困难的~
 {.is-info}
 
-# Stream Package
+# 前言
 
-在 Minotaur 中将会在 stream 包中提供网络相关的内容，目前提供了一些实现，但是应该还有体验更佳的姿势来实现。
+在 Minotaur 中不限制所使用的网络层实现，在本文中则会以 `fiber` 作为 `WebSocket` 服务器来讲述如何与 Actor 进行结合！
 
-在使用 stream 包搭建服务器前，我们或许应该先了解一个方面以便快速上手。
-
-## stream.Actor
-
-在 `stream.NewStream` 函数中，我们会发现返回值是一个名为 `Actor` 的结构体。这也就意味着我们需要将其放入 `ActorSystem` 中进行运行。不过一般来说，如果我们不需要自行实现某种服务器的支持，那么也就无需这么做。
-
-## stream.Configurator
-
-在目前已有的实现中，会发现不管是接下来讲到的 `WebSocket` 服务器还是 `Socket` 服务器，均需要传入 `ActorSystem` 和一个 `Configurator` 作为参数。ActorSystem 不必解释，我们依赖它运行，而 Configurator 则是让我们能够处理 `Stream` 消息的核心，它允许编辑 `Stream` 的配置，而我们也需要通过配置来操作 Stream 的 Actor。
-
-在 Configuration 中提供了 `WithPerformance` 函数，它将允许我们定义 Actor 的行为，就像正常使用 Actor 一样。
-
-需要注意几点：
-- 在 Stream Actor 中，我们可以处理 `*stream.Packet` 类型的消息，它将表示接收到的数据；
-- 单独地向 Writer 或 Stream 发送 vivid.OnTerminate 消息都将导致连接的断开，它们是等效的；
-
-> 当我们向 Stream Actor 或者其 Writer 发送类似于 `*vivid.OnTerminate` 这样的生命周期消息时，它将是生效的，如果关闭 Stream Actor，它会顺便销毁 Writer，而如果关闭 Writer，这个连接将无法写入数据！
+> Minotaur 不提供 HTTP 服务器的支持，但是这并不意味着您不能在 HTTP 服务器中使用 Actor，您仅需要在合适（需要）的时候通过引用进行消息的收发即可。
 {.is-warning}
 
+# Socket 工厂
 
+在 Minotaur 中创建基于 Actor 的网络服务器的第一步便是创建一个 `socket.Factory`，它的用途是维护所有 Socket 产生的 Actor，并确保生成 Actor 的过程是线程安全的。
 
-# HTTP 服务器
-
-Minotaur 中内置了 `fiber` 作为 HTTP 服务器组件，如果需要开启一个 HTTP 服务器，可参考 `fiber` 官方文档即可。目前暂时没有针对 HTTP 服务器的额外封装。
+首先，我们会依赖 `vivid.ActorSystem（如果您不理解它是什么，可在稍后的章节中进行了解）`，并通过其创建 `socket.Factory`：
 
 ```go
 package main
 
-import "github.com/gofiber/fiber/v2"
+import "github.com/kercylan98/minotaur/engine/vivid"
 
 func main() {
-	app := fiber.New()
-	app.Get("/ping", func(ctx *fiber.Ctx) error {
-		_, err := ctx.WriteString("pong")
-		return err
-	})
+	system := vivid.NewActorSystem()
+  factory := socket.NewFactory(system)
 }
 ```
 
-# WebSocket 服务器
+如此，我们便得到了 Socket 工厂，它的定义是这样的：
+```go
+type Factory interface {
+    Produce(actor Actor, writer Writer, closer Closer) Socket
+}
+```
 
-在 Minotaur 中，WebSocket 的实现依赖了 `fiber`，我们在 `stream` 包中提供了用于开启基于 vivid 的 ActorSystem 实现的 `WebSocket` 服务器路由处理函数。
+# 使用 Fiber 创建服务器
 
-一个完整的示例如下：
+由于我们需要使用 `fiber` 实现服务器功能，所以先下载对应的包：
+```shell
+go get -u github.com/gofiber/fiber/v2
+go get -u github.com/gofiber/contrib
+```
 
-```go 
+之后在 `main` 函数中我们继续：
+
+```go
 package main
 
 import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/kercylan98/minotaur/engine/stream"
+	"github.com/kercylan98/minotaur/engine/socket"
 	"github.com/kercylan98/minotaur/engine/vivid"
-	"github.com/kercylan98/minotaur/engine/vivid/behavior"
 )
 
 func main() {
 	system := vivid.NewActorSystem()
-
+	factory := socket.NewFactory(system)
 	fiberApp := fiber.New()
-	fiberApp.Get("/ws", stream.NewFiberWebSocketHandler(fiberApp, system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
-		c.WithPerformance(vivid.FunctionalStatefulActorPerformance(
-			func() behavior.Performance[vivid.ActorContext] {
-				var writer stream.Writer
-				return vivid.FunctionalActorPerformance(func(ctx vivid.ActorContext) {
-					switch m := ctx.Message().(type) {
-					case stream.Writer:
-						writer = m
-						ctx.Tell(writer, stream.NewPacketDC([]byte("Hello!"), websocket.TextMessage))
-					case *stream.Packet:
-						ctx.Tell(writer, m) // echo
-					}
-				})
-			}).
-			Stateful(),
-		)
-	})))
-
-	if err := fiberApp.Listen(":8888"); err != nil {
+  
+	// TODO
+	
+	if err := fiberApp.Listen(":8080"); err != nil {
 		panic(err)
 	}
+}
+```
+
+如此，我们便搭建了一个 WebSocket 服务器，但是它并没有任何效果。
+
+# 与 Actor 结合
+
+在开始将 `fiber` 与 `vivid` 相结合之前，我们需要先定义一个我们自己的 Actor，它仅需要实现 `socket.Actor` 接口即可：
+
+```go
+type Conn struct {
+	
+}
+
+func (c *Conn) OnReceive(ctx vivid.ActorContext) {
+	
+}
+
+func (c *Conn) OnPacket(ctx vivid.ActorContext, socket socket.Socket, packet *socket.Packet) {
+	socket.WritePacket(packet)
 }
 
 ```
 
-# Socket 服务器
-在 Minotaur 中，Socket 服务器是基于 `gnet/v2` 实现的，与 WebSocket 类似，我们提供了一个基于 vivid 的 ActorSystem 对 gnet.EventHandler 的实现。
+可以看到这个结构体我们在 `OnPacket` 函数中额外增加了写入数据包的代码，这是用于在接收到数据包时进行回响写入。
 
-一个完整示例如下：
+接下来，便是关键时刻，我们将在之前的 TODO 部分编写相关代码，以实现将 WebSocket 连接转换为支持 Actor 的 Socket：
+
+```go
+fiberApp.Get("/ws", websocket.New(func(conn *websocket.Conn) {
+	actorSocket := factory.Produce(new(Conn), func(packet []byte, ctx any) error {
+	return	conn.WriteMessage(websocket.TextMessage, packet)
+	}, func() error {
+		// 由于 Fiber 的 WebSocket 实现，需要手动发送关闭消息
+		if err := conn.WriteMessage(websocket.CloseMessage, nil); err != nil {
+			return err
+		}
+		return conn.Close()
+	})
+
+	var (
+		typ int
+		data []byte
+		err error
+	)
+
+	defer actorSocket.Close(err)
+	for {
+		typ, data, err = conn.ReadMessage()
+		if err != nil {
+			return
+		}
+		actorSocket.React(data, typ)
+	}
+}))
+```
+
+如此，我们便实现了一个支持 Actor 功能的 Socket 服务器了！
+
+# 完整代码
 
 ```go
 package main
 
 import (
-	"github.com/kercylan98/minotaur/engine/stream"
+	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/fiber/v2"
+	"github.com/kercylan98/minotaur/engine/socket"
 	"github.com/kercylan98/minotaur/engine/vivid"
-	"github.com/kercylan98/minotaur/engine/vivid/behavior"
-	"github.com/panjf2000/gnet/v2"
 )
 
 func main() {
 	system := vivid.NewActorSystem()
+	factory := socket.NewFactory(system)
+	fiberApp := fiber.New()
+	fiberApp.Get("/ws", websocket.New(func(conn *websocket.Conn) {
+		actorSocket := factory.Produce(new(Conn), func(packet []byte, ctx any) error {
+			return conn.WriteMessage(websocket.TextMessage, packet)
+		}, func() error {
+			// 由于 Fiber 的 WebSocket 实现，需要手动发送关闭消息
+			if err := conn.WriteMessage(websocket.CloseMessage, nil); err != nil {
+				return err
+			}
+			return conn.Close()
+		})
 
-	if err := gnet.Run(stream.NewGNETEventHandler(system, stream.FunctionalConfigurator(func(c *stream.Configuration) {
-		c.WithPerformance(vivid.FunctionalStatefulActorPerformance(
-			func() behavior.Performance[vivid.ActorContext] {
-				var writer stream.Writer
-				return vivid.FunctionalActorPerformance(func(ctx vivid.ActorContext) {
-					switch m := ctx.Message().(type) {
-					case stream.Writer:
-						writer = m
-					case *stream.Packet:
-						ctx.Tell(writer, m) // echo
-					}
-				})
-			}).
-			Stateful(),
+		var (
+			typ  int
+			data []byte
+			err  error
 		)
-	})), "tcp://127.0.0.1:8080"); err != nil {
+
+		defer actorSocket.Close(err)
+		for {
+			typ, data, err = conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			actorSocket.React(data, typ)
+		}
+	}))
+
+	if err := fiberApp.Listen(":8080"); err != nil {
 		panic(err)
 	}
+}
+
+type Conn struct{}
+
+func (c *Conn) OnReceive(ctx vivid.ActorContext) {}
+
+func (c *Conn) OnPacket(ctx vivid.ActorContext, socket socket.Socket, packet *socket.Packet) {
+	socket.WritePacket(packet)
 }
 ```
