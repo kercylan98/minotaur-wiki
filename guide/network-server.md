@@ -1,8 +1,8 @@
 ---
 title: 网络服务器
-description: 通过对 gnet 及 fiber 的扩展实现网络功能
+description: 支持各种 Socket 实现的网络服务器
 published: true
-date: 2024-09-11T08:49:48.769Z
+date: 2024-09-11T08:50:26.796Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-22T10:44:39.287Z
